@@ -129,7 +129,7 @@ function showSync(r){
   else if(r.offline||!navigator.onLine){b.className='syncbar off';b.textContent='📴 No network · you can still make entries. They upload when the network is back.';}
   else{b.style.display='none';return;}
   b.style.display='block';
-  clearTimeout(syncTimer);if(r.pending||(r.offline&&navigator.onLine))syncTimer=setTimeout(kickSync,(r.offline&&!navigator.onLine)?30000:5000);
+  clearTimeout(syncTimer);if(r.pending||(r.offline&&navigator.onLine))syncTimer=setTimeout(kickSync,(r.offline&&!navigator.onLine)?15000:4000);
 }
 window.addEventListener('online',kickSync);
 window.addEventListener('offline',function(){showSync(lastSync||{pending:0,offline:true})});
@@ -655,11 +655,11 @@ function renderToday(server,mine,scans,note){
     var ph=e.role==='delivery'&&e.bill?(e.photo==='Uploaded'?'<span style="font-size:11px;color:#14532d">📷 photo ✓</span>':/^Uploaded by /.test(e.photo)?'<span style="font-size:11px;color:#14532d">📷 '+esc(e.photo)+'</span>':sc&&sc.status==='pending'?'<span style="font-size:11px;color:#8a5a00">📷 scan waiting</span>':'<span style="font-size:11px;color:#8a5a00">📷 no photo</span>'):'';
     var md=/^Offline/.test(e.mode||'')?'<span style="font-size:11px;color:#5f6b76">📴 '+esc(e.mode)+'</span>':'';
     rows.push({role:e.role,time:e.time,ts:e.ts,store:e.store,bill:e.bill,amount:e.amount,extra:e.extra,html:c+ph+md});});}
-  mine.forEach(function(it){if(seen[it.id])return;if(server&&it.status==='done'&&!(it.result&&it.result.rowNum))return;rows.push(localRow(it,scans));});
+  mine.forEach(function(it){if(seen[it.id]||it.status==='done')return;rows.push(localRow(it,scans));});
   rows.sort(function(a,b){return b.ts-a.ts});
   var tot=0;rows.forEach(function(e){if(!/Not saved/.test(e.html))tot+=Number(e.amount)||0});
   var h='<div style="font-size:12px;color:#7b8699;margin-bottom:6px">'+new Date().toLocaleDateString('en-GB').replace(/\//g,'-')+' · view only</div>'
-    +(note?'<div class="warn" style="margin:0 0 10px">'+esc(note)+'</div>':'')
+    +(note?'<div class="warn" style="margin:0 0 10px">'+esc(note)+(server?'':' Uploaded entries are not kept on the phone - they show here when the network is back.')+'</div>':'')
     +'<div class="kpis"><div class="kpi"><b>'+rows.length+'</b><span>Entries today</span></div><div class="kpi"><b>'+inr(tot)+'</b><span>Total value</span></div></div>';
   if(!rows.length) h+='<div class="empty">No entries yet today.</div>';
   h+=rows.map(function(e){

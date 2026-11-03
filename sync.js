@@ -29,6 +29,7 @@ function qPut(it) { return sslTx('queue', 'readwrite', function (s) { return s.p
 function qDel(id) { return sslTx('queue', 'readwrite', function (s) { return s.delete(id); }); }
 function metaGet(k) { return sslTx('meta', 'readonly', function (s) { return s.get(k); }); }
 function metaSet(k, v) { return sslTx('meta', 'readwrite', function (s) { return s.put(v, k); }); }
+function sslDay(t) { var d = new Date(t); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
 function newId() {
   var a = new Uint8Array(8); crypto.getRandomValues(a);
   return Date.now().toString(36) + '-' + Array.prototype.map.call(a, function (b) { return (b + 256).toString(16).slice(1); }).join('');
@@ -79,10 +80,13 @@ function sslDoSync() {
           ? apiCall(url, 'submitQ', [it.token, { id: it.id, d: it.d, clientTime: it.clientTime }, Date.now()], 45000)
           : apiCall(url, 'scanQ', [it.token, it.entryId, it.b64, it.bill], 120000);
         return call.then(function (res) {
-          it.status = 'done'; it.result = res; it.doneAt = Date.now(); it.error = ''; it.needLogin = false;
-          if (it.kind === 'scan') it.b64 = '';
-          if (it.kind === 'entry') state[it.id] = 'done';
-          return qPut(it).then(next);
+          // Uploaded: remove it from the phone. For entries only a small marker stays until midnight
+          // (bill no. for the same-bill check) - store, amount, GPS and scan are deleted.
+          if (it.kind === 'scan') return qDel(it.id).then(next);
+          state[it.id] = 'done';
+          var d = it.d || {};
+          return qPut({ id: it.id, kind: 'entry', seq: it.seq, email: it.email, status: 'done', clientTime: it.clientTime, doneAt: Date.now(),
+            d: { activeRole: d.activeRole, bill: d.bill || '' } }).then(next);
         }, function (e) {
           if (e.net) { offline = true; return finish(); }
           var m = String(e.message || '');
@@ -95,10 +99,11 @@ function sslDoSync() {
       }
       function finish() {
         return qAll().then(function (a) {
-          var now = Date.now(), dels = [], pending = 0, rejected = 0, login = 0;
+          var today = sslDay(Date.now()), dels = [], pending = 0, rejected = 0, login = 0;
           a.forEach(function (it) {
-            if (it.status === 'done' && now - (it.doneAt || 0) > 3 * 864e5) dels.push(it.id);
-            else if (it.status === 'rejected' && now - (it.createdAt || 0) > 10 * 864e5) dels.push(it.id);
+            // nothing from earlier days stays on the phone except items still waiting to upload
+            if (it.status !== 'pending' && sslDay(it.clientTime || it.createdAt) !== today) dels.push(it.id);
+            else if (it.status === 'done' && it.kind === 'scan') dels.push(it.id);
             else if (it.status === 'pending') { pending++; if (it.needLogin) login++; }
             else if (it.status === 'rejected') rejected++;
           });

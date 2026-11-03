@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>SSL Staff</title>
+<meta name="theme-color" content="#1e3a6e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;margin:0;padding:12px;min-height:100vh;background:#eef1f7;color:#1e2a3a}
+.masthead{max-width:460px;margin:14px auto 0;display:flex;align-items:center;gap:10px;padding:0 6px}
+.masthead .logo{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#1e3a6e,#2c5aa0);display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;flex-shrink:0}
+.masthead h1{font-size:17px;margin:0}
+.masthead p{margin:0;font-size:11.5px;color:#7b8699;text-transform:uppercase;letter-spacing:.6px}
+.masthead .lock{margin:0 0 0 auto;width:auto;box-shadow:none;background:#fff;border:1px solid #d7dce6;border-radius:8px;font-size:12px;padding:6px 12px;color:#1e3a6e;display:none}
+.card{max-width:460px;margin:12px auto 30px;background:#fff;border-radius:14px;box-shadow:0 6px 24px #1e2a3a1f;overflow:hidden;border:1px solid #e4e8f0}
+.banner{padding:18px 20px 14px;color:#fff;background:linear-gradient(135deg,#243b55,#2c5aa0)}
+.banner.delivery{background:linear-gradient(135deg,#14532d,#1f8a4c)}
+.banner.orders{background:linear-gradient(135deg,#7a3d00,#c06a12)}
+.banner.accounts{background:linear-gradient(135deg,#1e3a6e,#2c5aa0)}
+.banner h2{margin:0;font-size:18px;font-weight:600}
+.banner small{opacity:.9;font-size:13px}
+.badge{display:inline-block;background:#ffffff26;padding:3px 10px;border-radius:20px;font-size:11.5px;margin-top:4px}
+.tabs{display:none;border-bottom:1px solid #e4e8f0}
+.tabs button{flex:1;margin:0;border-radius:0;background:#fff;color:#5f6b76;box-shadow:none;font-size:13.5px;padding:12px 4px;white-space:nowrap;border-bottom:3px solid transparent}
+.tabs button.on{color:#1e3a6e;border-bottom-color:#2c5aa0;background:#f5f8fd}
+.body{padding:18px 20px 24px}
+label{display:block;margin:14px 0 5px;font-weight:600;font-size:13px;color:#333;text-transform:uppercase;letter-spacing:.3px}
+input,select{width:100%;padding:12px;font-size:16px;border:1.5px solid #d7dce6;border-radius:8px;background:#f8f9fc;color:#1e2a3a}
+input:focus,select:focus{outline:none;border-color:#2c5aa0;background:#fff;box-shadow:0 0 0 3px #2c5aa01f}
+button{width:100%;margin-top:20px;padding:13px;font-size:16px;font-weight:600;border:0;border-radius:8px;background:linear-gradient(135deg,#1e3a6e,#2c5aa0);color:#fff;box-shadow:0 3px 10px #1e3a6e40;cursor:pointer}
+button:active{transform:scale(.98)}
+button:disabled{background:#b8c0cc;box-shadow:none;cursor:not-allowed}
+button.grey{background:#8b93a3;box-shadow:none;margin-top:10px}
+.gps{margin:12px 0 0;padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:600}
+.gps.wait{background:#fff6e0;color:#8a5a00}.gps.ok{background:#e3f4e8;color:#14532d}.gps.bad{background:#fde8e8;color:#9b1c1c}
+.sp-res .opt{padding:11px 12px;border:1px solid #e4e8f0;border-top:0;font-size:15px;cursor:pointer;background:#fff}
+.sp-res .opt:first-child{border-top:1px solid #e4e8f0;border-radius:8px 8px 0 0}
+.sp-res .opt:last-child{border-radius:0 0 8px 8px}
+.sp-res .opt.new{color:#8a5a00;font-size:14px;background:#fffaf0}
+.sp-sel{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid #1f8a4c;border-radius:8px;background:#f1faf4;font-weight:600}
+.sp-sel span{flex:1}.sp-sel a{color:#2c5aa0;font-size:13px;font-weight:600;cursor:pointer}
+#modal{display:none;position:fixed;inset:0;background:#0007;align-items:center;justify-content:center;padding:16px;z-index:9}
+#modal .card{width:100%;margin:0}
+.warn{background:#fff6e0;border:1.5px solid #f0b94d;color:#8a5a00;padding:10px 12px;border-radius:8px;font-size:13.5px;margin-top:10px;font-weight:600}
+.section{border:1px solid #e4e8f0;border-radius:10px;padding:4px 14px 10px;margin-top:14px;background:#f8f9fc}
+.sum{background:#f1f4f9;padding:10px 12px;border-radius:8px;margin:4px 0 8px}
+.sum div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:14.5px;border-bottom:1px dashed #dde3ec}
+.sum div:last-child{border-bottom:0}.sum b{color:#5f6b76;font-weight:600}
+.msg{margin-top:14px;font-weight:700;text-align:center}
+.photoBox{text-align:center;padding:6px 0}.photoBox p{font-size:14px;color:#555;line-height:1.5}
+#photoStatus{margin-top:14px;font-weight:600;font-size:14px}
+/* outstanding */
+.kpis{display:flex;gap:8px;margin:2px 0 10px}.kpi{flex:1;background:#f1f4f9;border-radius:10px;padding:8px 10px}
+.kpi b{display:block;font-size:16px}.kpi span{font-size:11px;color:#5f6b76}
+.sort{display:flex;gap:6px;margin-top:8px}.sort button{margin:0;flex:1;font-size:13px;padding:8px 4px;background:#fff;color:#5f6b76;border:1px solid #d7dce6;box-shadow:none}
+.sort button.on{background:#1e3a6e;color:#fff;border-color:#1e3a6e}
+.legend{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 4px}.legend span{font-size:11px;border-radius:6px;padding:3px 6px}
+.row{display:flex;align-items:center;gap:10px;border:1px solid #e4e8f0;border-radius:10px;padding:11px 12px;margin:8px 0;cursor:pointer;background:#fff}
+.row .nm{flex:1;min-width:0}.row .nm div{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm small{color:#5f6b76;font-size:12px}.amt{text-align:right;font-weight:700;font-size:15px;white-space:nowrap}
+.amt small{display:block;font-size:11px;color:#b00020}.chip{font-size:11px;font-weight:700;border-radius:20px;padding:4px 8px;white-space:nowrap}
+.bill{border-radius:10px;padding:10px 12px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+.bill .no{font-weight:700;font-size:15px}.bill .pd{font-weight:800;font-size:16px;text-align:right}
+.bill .meta{font-size:12px;opacity:.85}.bill .dd{font-size:12px;font-weight:700;text-align:right}
+.back{background:none;box-shadow:none;color:#2c5aa0;width:auto;padding:0;margin:0 0 6px;font-size:14px}
+.empty{text-align:center;color:#7b8699;padding:26px 8px;font-size:14px}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0}.thumb{position:relative;width:70px}.thumb img{width:70px;height:90px;object-fit:cover;border:1px solid #ccc;border-radius:6px;background:#fff}.thumb span{position:absolute;left:4px;bottom:4px;background:#0008;color:#fff;font-size:11px;padding:0 5px;border-radius:8px}.thumb b{position:absolute;right:-6px;top:-6px;background:#b91c1c;color:#fff;border-radius:50%;width:22px;height:22px;line-height:22px;font-size:12px;cursor:pointer}
+.scanWrap{width:100%;text-align:center;background:#111;border-radius:8px;padding:4px 0}.scanWrap canvas{touch-action:none;max-width:100%}
+.syncbar{max-width:460px;margin:8px auto 0;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600;display:none;cursor:pointer}
+.syncbar.off{background:#fff6e0;color:#8a5a00;border:1px solid #f0d08a}.syncbar.up{background:#e8f0fb;color:#1e3a6e;border:1px solid #c7d7f0}
+.syncbar.bad{background:#fde8e8;color:#9b1c1c;border:1px solid #f3b4b4}.syncbar.ok{background:#e3f4e8;color:#14532d;border:1px solid #b9e2c6}
+.masthead .inst{margin:0 0 0 auto;width:auto;font-size:12px;padding:6px 10px;display:none}
+.masthead .inst+.lock{margin-left:6px}
+.tag{font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px}
+.seg{display:flex;gap:6px;margin:8px 0}.seg button{flex:1;background:#e5e7eb;color:#111;margin:0}.seg button.on{background:#1e3a8a;color:#fff}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="sync.js"></script>
+</head><body>
+<div class="masthead"><img src="icon-192.png" alt="" style="width:38px;height:38px;border-radius:9px;flex-shrink:0"><div><h1>SSL Staff</h1><p>Daily work &amp; outstanding</p></div><button class="inst" id="instBtn">📲 Install</button><button class="lock" id="lockBtn" onclick="logout()">Lock</button></div>
+<div class="syncbar" id="syncBar" onclick="if(U)showTab('today')"></div>
+<div class="card" id="app">
+  <div class="banner" id="banner"><h2 id="who2">Daily Work</h2><small id="who">Signing in...</small></div>
+  <div class="tabs" id="tabs"><button id="tabWork" onclick="showTab('work')">📝 Work</button><button id="tabToday" onclick="showTab('today')">📅 Today</button><button id="tabOs" onclick="showTab('os')">💰 Outstanding</button></div>
+  <div class="body"><div id="form"></div><div class="msg" id="msg"></div></div>
+</div>
+<div id="modal"><div class="card"><div class="banner" id="mbanner"><h2>Please confirm</h2></div><div class="body">
+<div class="sum" id="sum"></div><div id="warnBox"></div>
+<button id="yes">Yes, submit</button><button class="grey" onclick="closeM()">Go back and edit</button></div></div></div>
+<script>
+// ---------- connection to the Google sheet ----------
+var API=null;
+try{API=localStorage.getItem('ssl_api')||null}catch(e){}
+(function(){var m=location.hash.match(/[#&]k=([\w-]{20,})/);
+  if(m){API='https://script.google.com/macros/s/'+m[1]+'/exec';try{localStorage.setItem('ssl_api',API)}catch(e){}
+    try{history.replaceState(null,'',location.pathname)}catch(e){}}
+  if(API)metaSet('api',API).catch(function(){});})();
+function liveCall(fn,args,ms){return apiCall(API,fn,args,ms||25000)}
+// same style as the Google version: google.script.run.withSuccessHandler(..).fn(args)
+function runner(){var s=function(){},f=function(){};var o=new Proxy({},{get:function(_,k){
+  if(k==='withSuccessHandler')return function(x){s=x;return o};
+  if(k==='withFailureHandler')return function(x){f=x;return o};
+  return function(){var a=[].slice.call(arguments);liveCall(k,a).then(function(r){s(r)},function(e){f(e)})};}});return o}
+var google={script:{}};Object.defineProperty(google.script,'run',{get:runner});
+
+// ---------- PIN remembered on this phone (for login without network) ----------
+function pinKey(pin){return crypto.subtle.digest('SHA-256',new TextEncoder().encode('ssl-staff|'+pin)).then(function(b){return 'ssl_u_'+Array.prototype.map.call(new Uint8Array(b),function(x){return (x+256).toString(16).slice(1)}).join('').slice(0,40)})}
+function savePin(pin,u){return pinKey(pin).then(function(k){var c=JSON.parse(JSON.stringify(u));delete c.serverTime;lsSet(k,JSON.stringify({u:c,at:Date.now()}))})}
+function loadPin(pin){return pinKey(pin).then(function(k){try{var v=JSON.parse(lsGet(k)||'null');return v&&v.u}catch(e){return null}})}
+function forgetPin(pin){return pinKey(pin).then(function(k){try{localStorage.removeItem(k)}catch(e){}})}
+
+// ---------- upload status ----------
+var syncTimer=null,lastSync=null;
+function kickSync(){
+  syncNow().then(function(r){lastSync=r;showSync(r)},function(){showSync(lastSync)});
+  if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(function(reg){if(reg.sync)return reg.sync.register('ssl-sync')}).catch(function(){});
+}
+function showSync(r){
+  var b=$('syncBar');if(!b)return;
+  if(!r){b.style.display='none';return;}
+  var mine=0;
+  if(r.needLogin){b.className='syncbar bad';b.textContent='⚠️ '+r.needLogin+' saved item(s) cannot upload - PIN was changed. Log in again with the new PIN.';}
+  else if(r.pending&&(r.offline||!navigator.onLine)){b.className='syncbar off';b.textContent='📴 No network · '+r.pending+' item(s) saved on this phone. They will upload automatically.';}
+  else if(r.pending){b.className='syncbar up';b.textContent='⏳ Uploading '+r.pending+' item(s)...';}
+  else if(r.rejected){b.className='syncbar bad';b.textContent='⚠️ '+r.rejected+' item(s) were not accepted. Tap to see in Today.';}
+  else if(r.offline||!navigator.onLine){b.className='syncbar off';b.textContent='📴 No network · you can still make entries. They upload when the network is back.';}
+  else{b.style.display='none';return;}
+  b.style.display='block';
+  clearTimeout(syncTimer);if(r.pending||(r.offline&&navigator.onLine))syncTimer=setTimeout(kickSync,(r.offline&&!navigator.onLine)?30000:5000);
+}
+window.addEventListener('online',kickSync);
+window.addEventListener('offline',function(){showSync(lastSync||{pending:0,offline:true})});
+
+// ---------- install as an app ----------
+var installEvt=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();installEvt=e;$('instBtn').style.display='block'});
+window.addEventListener('appinstalled',function(){$('instBtn').style.display='none'});
+function isApp(){return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){})}
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
+
+var U=null,PIN='',loc=null,dupInfo={count:0},currentRowNum=null,currentBillNo='',TAB='work',SEL={};
+var gpsWatch=null,gpsStart=0,gpsTimer=null,GOOD_ACC=100,WAIT_MS=25000;
+function $(id){return document.getElementById(id)}
+document.addEventListener('DOMContentLoaded',function(){});
+var ICON={delivery:'🚚',orders:'🧾',accounts:'📊'};
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function opts(a){return '<option value="">-- select --</option>'+a.map(function(x){return '<option>'+esc(x)+'</option>'}).join('')}
+function dlist(id,a){return '<input id="'+id+'" list="'+id+'_l" autocomplete="off" placeholder="Type to search..."><datalist id="'+id+'_l">'+a.map(function(x){return '<option value="'+esc(x)+'">'}).join('')+'</datalist>'}
+function cap(r){return r.charAt(0).toUpperCase()+r.slice(1)}
+function isField(){return U && U.fieldRoles.indexOf(U.role)>=0}
+
+// ---------- login ----------
+function pinScreen(note){
+  U=null;stopGps();
+  $('banner').className='banner';$('tabs').style.display='none';$('lockBtn').style.display='none';
+  $('who2').textContent='SSL Staff';
+  $('who').textContent=note||'Enter your PIN';
+  $('form').innerHTML='<label>PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="off"><button id="loginBtn">Login</button>'
+    +(isApp()?'':'<div class="empty" style="padding:16px 4px 0;font-size:13px">📲 Tip: install this as an app - tap <b>Install</b> at the top, or the browser menu ⋮ → <b>Install app</b> / <b>Add to Home screen</b>.</div>');
+  $('loginBtn').onclick=function(){start($('pin').value)};
+  $('pin').onkeydown=function(e){if(e.key==='Enter')start($('pin').value)};
+  $('msg').textContent='';
+}
+function start(pin){
+  if(!API){
+    $('who2').textContent='SSL Staff';$('who').textContent='Setup needed';
+    $('form').innerHTML='<div class="empty">This app is not connected yet.<br><br>Open the <b>setup link</b> sent by the office (WhatsApp) on this phone, then install the app.</div>';return;
+  }
+  if(!pin){pinScreen('');return;}
+  $('who').textContent='Checking PIN...';$('loginBtn')&&($('loginBtn').disabled=true);
+  liveCall('login',[pin],9000).then(function(u){
+    if(!u){forgetPin(pin);pinScreen('Wrong PIN. Try again.');return;}
+    savePin(pin,u);qRetoken(u.email,u.token).then(kickSync,kickSync);
+    enter(u,pin,false);
+  },function(e){
+    if(!e.net){pinScreen(e.message);return;}
+    loadPin(pin).then(function(c){
+      if(c)enter(c,pin,true);
+      else pinScreen(lsHasUsers()?'No network. Check your PIN, or connect to the internet.':'No network. The first login on this phone needs internet.');
+    });
+  });
+}
+function lsHasUsers(){try{for(var i=0;i<localStorage.length;i++)if(/^ssl_u_/.test(localStorage.key(i)))return true}catch(e){}return false}
+function enter(u,pin,offline){
+  U=u;PIN=pin||'';U.offline=offline;
+  $('lockBtn').style.display='block';
+  $('who').innerHTML=esc(u.name)+'<div class="badge">'+esc(u.email)+'</div>'+(offline?' <div class="badge">📴 offline mode</div>':'');
+  $('tabs').style.display='flex';$('tabOs').style.display=u.os!=='none'?'block':'none';
+  if(u.roles.length>1) showRolePicker(); else setActiveRole(u.roles[0]);
+  kickSync();
+}
+function logout(){U=null;PIN='';SEL={};stopGps();closeM();start('')}
+
+function showRolePicker(){
+  TAB='work';markTabs();stopGps();
+  $('banner').className='banner';
+  $('who2').textContent='What are you logging now?';
+  var btns=U.roles.map(function(r){return '<button onclick="setActiveRole(\''+r+'\')">'+(ICON[r]||'')+' '+cap(r)+'</button>'}).join('');
+  $('form').innerHTML='<div style="text-align:center"><p style="font-size:14px;color:#555">You are set up for more than one role. Choose which one you are doing right now.</p>'+btns+'</div>';
+  $('msg').textContent='';
+}
+function setActiveRole(r){
+  U.role=r;TAB='work';markTabs();
+  $('banner').className='banner '+r;
+  $('who2').innerHTML=(ICON[r]||'')+' '+cap(r)+(U.roles.length>1?' <span style="font-size:11px;opacity:.85;text-decoration:underline;cursor:pointer" onclick="showRolePicker()">(switch)</span>':'');
+  build();
+  if(isField()&&U.capture) startGps(); else stopGps();
+}
+function markTabs(){$('tabWork').className=TAB==='work'?'on':'';$('tabToday').className=TAB==='today'?'on':'';$('tabOs').className=TAB==='os'?'on':''}
+function showTab(t){
+  if(!U)return;TAB=t;markTabs();$('msg').textContent='';
+  if(t==='work'){ if(U.role) build(); else showRolePicker(); }
+  else if(t==='today') todayView();
+  else osStart();
+}
+
+// ---------- GPS ----------
+function startGps(){
+  stopGps();loc=null;gpsStart=Date.now();
+  if(!navigator.geolocation){gpsShow();return;}
+  gpsWatch=navigator.geolocation.watchPosition(function(p){
+    var n={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy),t:Date.now()};
+    if(!loc||n.acc<=loc.acc||Date.now()-loc.t>60000) loc=n;
+    gpsShow();
+  },function(err){loc=loc||null;gpsErr=err.code;gpsShow();},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
+  gpsTimer=setInterval(gpsShow,2000);gpsShow();
+}
+var gpsErr=0;
+function stopGps(){if(gpsWatch!==null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;if(gpsTimer)clearInterval(gpsTimer);gpsTimer=null;gpsErr=0}
+function gpsReady(){
+  if(!isField()||!U.capture) return true;
+  if(!loc) return false;
+  return loc.acc<=GOOD_ACC || Date.now()-gpsStart>WAIT_MS;
+}
+function gpsShow(){
+  var el=$('gps'),btn=$('reviewBtn');
+  if(btn) btn.disabled=!gpsReady();
+  if(!el) return;
+  if(!isField()||!U.capture){el.style.display='none';return;}
+  if(gpsErr===1&&!loc){el.className='gps bad';el.innerHTML='⚠️ Location is blocked. Allow location for this app in your phone settings, then tap Lock and log in again.';return;}
+  if(!loc){el.className='gps wait';el.textContent='📍 Getting your location... stand outside or near a window.';return;}
+  if(loc.acc<=GOOD_ACC){el.className='gps ok';el.textContent='📍 Location ready (accurate to '+loc.acc+' m)';return;}
+  if(gpsReady()){el.className='gps wait';el.textContent='📍 Weak GPS signal ('+loc.acc+' m). You can submit; it will be marked weak.';return;}
+  el.className='gps wait';el.textContent='📍 Improving location... now '+loc.acc+' m';
+}
+
+// ---------- store picker (must pick from the list) ----------
+function storePicker(id){
+  return '<div id="sp_'+id+'"><input id="spq_'+id+'" autocomplete="off" placeholder="Type 2+ letters of the store name"><div class="sp-res" id="spr_'+id+'"></div></div>';
+}
+function bindPicker(id){
+  var q=$('spq_'+id); if(!q) return;
+  q.oninput=function(){
+    var t=q.value.trim().toLowerCase(),r=$('spr_'+id);
+    if(t.length<2){r.innerHTML='';return;}
+    var words=t.split(/\s+/);
+    var score=function(p){var l=' '+p.toLowerCase();return words.reduce(function(n,w){return n+(l.indexOf(' '+w)>=0?0:1)},0)};var m=U.lists.parties.filter(function(p){var l=p.toLowerCase();return words.every(function(w){return l.indexOf(w)>=0})}).sort(function(a,b){return score(a)-score(b)}).slice(0,8);
+    r.innerHTML=m.map(function(p,i){return '<div class="opt" data-i="'+i+'">'+esc(p)+'</div>'}).join('')
+      +'<div class="opt new" data-new="1">➕ Store not in list - add "'+esc(q.value.trim())+'" as new</div>';
+    Array.prototype.forEach.call(r.querySelectorAll('.opt'),function(o){
+      o.onclick=function(){ pick(id, o.getAttribute('data-new')?('NEW: '+q.value.trim()):m[+o.getAttribute('data-i')]); };
+    });
+  };
+}
+function pick(id,name){
+  SEL[id]=name;
+  $('sp_'+id).innerHTML='<div class="sp-sel"><span>'+esc(name)+'</span><a onclick="unpick(\''+id+'\')">Change</a></div>';
+}
+function unpick(id){delete SEL[id];$('sp_'+id).outerHTML=storePicker(id);bindPicker(id);$('spq_'+id).focus()}
+
+// ---------- forms ----------
+function build(){
+  if(TAB!=='work')return;
+  var L=U.lists,h='';SEL={};
+  if(U.role=='delivery'){
+    h='<label>Vehicle used</label><select id="vehicle">'+opts(['Two-wheeler','Van'])+'</select>'
+      +'<label>Store / Retailer supplied</label>'+storePicker('party')
+      +'<label>Bill No. (leave blank if this visit is only to collect an old-bill return)</label><input id="bill" autocomplete="off" oninput="billCheck()" onblur="billCheck()">'
+      +'<label>Bill amount, full value (Rs)</label><input id="amount" type="number" inputmode="decimal" oninput="billCheck()">'
+      +'<div id="dupWarn"></div>'
+      +'<label>Any return?</label><select id="returnStatus" onchange="toggleReturn()">'
+        +'<option value="none">No return</option><option value="same">Yes - return from this same bill</option><option value="old">Yes - return against an old bill</option></select>'
+      +'<div id="sameReturn" class="section" style="display:none"><label>Return value (Rs)</label><input id="retValSame" type="number" inputmode="decimal"></div>'
+      +'<div id="oldReturn" class="section" style="display:none"><label>Old bill no. (if known)</label><input id="refBillOld" placeholder="Leave blank if not known"><label>Return value (Rs)</label><input id="retValOld" type="number" inputmode="decimal" placeholder="Leave blank if not known"></div>';
+    var v=lsGet('vehicle_'+U.email); if(v) setTimeout(function(){if($('vehicle'))$('vehicle').value=v},0);
+  } else if(U.role=='orders'){
+    h='<label>Store / Retailer</label>'+storePicker('party')
+      +'<label>Visit type</label><select id="type" onchange="tg()">'+opts(['Order received','Regular visit','Money collection','Supply (helped with a delivery)'])+'</select>'
+      +'<div id="mc" style="display:none">'
+        +'<label id="billLabel">Bill No.</label><input id="bill" autocomplete="off">'
+        +'<label id="amtLabel">Amount (Rs)</label><input id="amount" type="number" inputmode="decimal">'
+        +'<div id="payModeDiv"><label>Payment mode</label><select id="mode">'+opts(['UPI','Cash','Cheque'])+'</select></div>'
+      +'</div>';
+  } else {
+    h='<label>Store / Retailer</label>'+storePicker('party')
+      +'<label>Bill No.</label><input id="bill" autocomplete="off">'
+      +'<label>Bill amount (Rs)</label><input id="amount" type="number" inputmode="decimal">'
+      +'<label>Transporter</label>'+dlist('transporter',L.transporters)
+      +'<label>No. of cases</label><input id="cases" type="number" inputmode="numeric">'
+      +'<label>Transporter cost (Rs)</label><input id="transportCost" type="number" inputmode="decimal">';
+  }
+  $('form').innerHTML=h+'<div class="gps wait" id="gps"></div><button id="reviewBtn" onclick="review()">Review &amp; Submit</button>';
+  bindPicker('party');
+  dupInfo={count:0};
+  gpsShow();
+}
+function toggleReturn(){var v=$('returnStatus').value;$('sameReturn').style.display=v=='same'?'block':'none';$('oldReturn').style.display=v=='old'?'block':'none'}
+function tg(){
+  var t=$('type').value,isSupply=t=='Supply (helped with a delivery)',isCollection=t=='Money collection';
+  $('mc').style.display=(isCollection||isSupply)?'block':'none';
+  $('payModeDiv').style.display=isCollection?'block':'none';
+  $('billLabel').textContent=isSupply?'Bill No. (supply delivered)':'Bill No. collected for';
+  $('amtLabel').textContent=isSupply?'Supply bill amount (Rs)':'Amount collected (Rs)';
+}
+function val(id){if(id==='party')return SEL.party||'';var e=$(id);return e?e.value.trim():''}
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+var billTimer=null;
+function billCheck(){
+  if(U.role!='delivery')return;
+  clearTimeout(billTimer);
+  billTimer=setTimeout(function(){
+    var bill=val('bill'),dw=$('dupWarn');
+    if(!bill){if(dw)dw.innerHTML='';dupInfo={count:0};return;}
+    var key=bill.toLowerCase();
+    qAll().then(function(items){
+      var mineLocal=items.some(function(it){return it.kind==='entry'&&it.email===U.email&&it.status!=='rejected'&&it.d&&it.d.activeRole==='delivery'&&String(it.d.bill||'').trim().toLowerCase()===key});
+      if(mineLocal){dupInfo={count:0,ownDuplicate:true,local:true};if(dw)dw.innerHTML='<div class="warn">⛔ You have already entered this bill no. on this phone.</div>';return;}
+      if(!navigator.onLine){dupInfo={count:0,offline:true};if(dw)dw.innerHTML='<div class="warn" style="background:#f1f4f9;border-color:#d7dce6;color:#5f6b76">📴 No network - the duplicate check will be done when this entry uploads.</div>';return;}
+    google.script.run.withSuccessHandler(function(r){
+      if(val('bill').toLowerCase()!==key)return;
+      dupInfo=r;dw=$('dupWarn');if(!dw)return;
+      if(r.ownDuplicate) dw.innerHTML='<div class="warn">⛔ You have already entered this bill no. yourself. If someone else also delivered it, they should enter it from their own login.</div>';
+      else if(r.count>0){
+        var amt=Number(val('amount'))||0;
+        dw.innerHTML='<div class="warn">⚠️ This bill no. was already entered '+r.count+' time(s). This will be entry #'+(r.count+1)+' and the amount will be split equally.'+(amt>0?' Estimated split: Rs '+Math.round(amt/(r.count+1)):'')
+          +'<br>'+(r.photoBy?'📷 Bill photo already uploaded by '+esc(r.photoBy)+'.':'📷 Bill photo not uploaded yet - you will be asked to upload it.')+'</div>';
+      } else dw.innerHTML='';
+    }).withFailureHandler(function(){dupInfo={count:0,offline:true}}).checkBill(bill,PIN);
+    });
+  },300);
+}
+
+function collect(){
+  var d={};
+  ['vehicle','party','bill','amount','type','mode','transporter','cases','transportCost','returnStatus','retValSame','refBillOld','retValOld'].forEach(function(k){d[k]=val(k)});
+  if(U.role!='orders')d.type='';
+  if(U.role=='orders'){
+    var isCollection=d.type=='Money collection',isSupply=d.type=='Supply (helped with a delivery)';
+    if(!isCollection&&!isSupply){d.bill='';d.amount='';}
+    if(!isCollection)d.mode='';
+  }
+  if(U.role!='delivery')d.returnStatus='';
+  d.activeRole=U.role;
+  if(isField()&&loc){d.lat=loc.lat;d.lng=loc.lng;d.acc=loc.acc;}
+  return d;
+}
+
+var LABELS={vehicle:'Vehicle',party:'Store',bill:'Bill No.',amount:'Amount (Rs)',type:'Visit type',mode:'Payment mode',transporter:'Transporter',cases:'No. of cases',transportCost:'Transport cost (Rs)',retValSame:'Return value (Rs)',refBillOld:'Old bill no.',retValOld:'Old-bill return (Rs)'};
+
+function review(){
+  var d=collect(),m=[];
+  if(!d.party)m.push('Pick the store from the list');
+  if(U.role=='orders'&&!d.type)m.push('Select visit type');
+  if(U.role=='orders'&&d.type=='Money collection'&&(!d.bill||!d.amount||!d.mode))m.push('Fill bill no., amount and payment mode');
+  if(U.role=='orders'&&d.type=='Supply (helped with a delivery)'&&(!d.bill||!(+d.amount>0)))m.push('Fill bill no. and amount for the supply');
+  if(U.role=='accounts'&&(!d.bill||!(+d.amount>0)))m.push('Fill bill no. and amount');
+  if(U.role=='accounts'&&!d.transporter)m.push('Select transporter');
+  if(U.role=='delivery'){
+    if(!d.vehicle)m.push('Select vehicle used');
+    var rs=d.returnStatus||'none';
+    if(rs=='none'||rs=='same'){
+      if(!d.bill||!(+d.amount>0))m.push('Fill bill no. and bill amount');
+      else if(dupInfo.ownDuplicate)m.push('You have already entered this bill no.');
+    }
+    if(rs=='same'){
+      if(!(+d.retValSame>0))m.push('Enter the return value');
+      else if(+d.retValSame>+d.amount)m.push('Return value cannot be more than the bill amount');
+    }
+  }
+  if(isField()&&U.capture&&!gpsReady())m.push('Wait for your location (top of the button)');
+  if(m.length){$('msg').style.color='#c00';$('msg').textContent=m.join(' | ');return;}
+  $('msg').textContent='';
+  $('mbanner').className='banner '+U.role;
+  var rows=Object.keys(LABELS).filter(function(k){return d[k]}).map(function(k){return '<div><b>'+LABELS[k]+'</b><span>'+esc(d[k])+'</span></div>'});
+  if(isField()&&loc) rows.push('<div><b>Location</b><span>Captured (±'+loc.acc+' m)</span></div>');
+  rows.push('<div><b>Time</b><span>'+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</span></div>');
+  if(!navigator.onLine) rows.push('<div><b>Network</b><span>📴 None - will upload later</span></div>');
+  $('sum').innerHTML=rows.join('');
+  var w='';
+  if(/^NEW: /.test(d.party)) w+='<div class="warn">⚠️ This store is not on the list. The office will check the name.</div>';
+  if(U.role=='delivery'&&dupInfo.count>0&&(d.returnStatus=='none'||d.returnStatus=='same')) w+='<div class="warn">⚠️ This is entry #'+(dupInfo.count+1)+' for bill '+esc(d.bill)+'. The amount will be split equally with the earlier '+dupInfo.count+'.</div>';
+  if(U.role=='delivery'&&d.returnStatus=='old') w+='<div class="warn">⚠️ An old-bill return'+(d.retValOld?' of Rs '+esc(d.retValOld):'')+(d.refBillOld?' against bill '+esc(d.refBillOld):'')+' will be recorded.</div>';
+  if(U.role=='delivery'&&d.returnStatus=='same') w+='<div class="warn">⚠️ Net value after return: Rs '+((+d.amount)-(+d.retValSame))+' (before any split).</div>';
+  $('warnBox').innerHTML=w;
+  $('modal').style.display='flex';
+  $('yes').disabled=false;
+  $('yes').onclick=function(){
+    $('yes').disabled=true;$('yes').textContent='Saving...';
+    if(U.role=='delivery'&&d.vehicle) lsSet('vehicle_'+U.email,d.vehicle);
+    var item={id:newId(),kind:'entry',seq:Date.now()+Math.random(),token:U.token,email:U.email,name:U.name,d:d,clientTime:Date.now(),status:'pending',createdAt:Date.now()};
+    qPut(item).then(function(){
+      closeM();kickSync();
+      if(U.role=='delivery'&&d.bill&&!dupInfo.photoBy){ showPhotoScreen(item.id,d.bill,null,''); }
+      else{
+        build();
+        var t='✅ Saved. '+(navigator.onLine?'Uploading now.':'No network - it will upload automatically.');
+        if(d.returnStatus=='old')t+=' Old-bill return noted.';
+        if(dupInfo.photoBy)t+=' Bill photo already uploaded by '+dupInfo.photoBy+'.';
+        $('msg').style.color='green';$('msg').textContent=t;
+      }
+    },function(e){$('yes').disabled=false;$('yes').textContent='Yes, submit';$('msg').style.color='#c00';$('msg').textContent='Could not save on this phone: '+(e&&e.message||e)+'. Free some phone storage and try again.';closeM();});
+  };
+}
+function locNote(res){
+  if(!res||!res.check)return '';
+  if(res.check==='FAR FROM STORE') return '<div class="warn" style="text-align:left">📍 You were about '+res.dist+' m from this store\'s saved location. The office will review this entry.</div>';
+  if(res.check==='WEAK GPS') return '<div class="warn" style="text-align:left">📍 GPS signal was weak for this entry.</div>';
+  return '';
+}
+function closeM(){$('modal').style.display='none';$('yes').textContent='Yes, submit';$('yes').disabled=false}
+
+// ---------- bill scan (like CamScanner) ----------
+var photoPages=[],SCAN=null;
+var currentEntryId='';
+function showPhotoScreen(entryId,billNo,res,note){
+  currentEntryId=entryId;currentBillNo=billNo;photoPages=[];
+  var t='✅ Bill No. '+esc(billNo)+' saved'+(navigator.onLine?'.':' on this phone (no network).');
+  if(res&&res.splitValue)t+=' Net/split amount: Rs '+res.splitValue+' each (x'+res.totalEntries+').';
+  $('msg').innerHTML=note||'';
+  photoHome(t);
+}
+var photoHeadText='';
+function photoHome(t){
+  if(t)photoHeadText=t;
+  $('form').innerHTML='<div class="photoBox"><p>'+photoHeadText+'<br>Scan the delivery bill (Magic Color). Keep the bill flat on a darker surface and fill the screen with it. More than one page: tap Scan Page for each page, then Done.</p>'
+    +'<input type="file" accept="image/*" capture="environment" id="photoInput" style="display:none" onchange="addPage()">'
+    +'<div id="pageThumbs" class="thumbs"></div>'
+    +'<button onclick="$(\'photoInput\').click()">📷 Scan Page</button>'
+    +'<button id="doneBtn" onclick="uploadAllPages()" style="display:none">✅ Done - Upload</button>'
+    +'<button class="grey" onclick="skipPhoto()">Skip for now</button><div id="photoStatus"></div></div>';
+  refreshPhotoStatus();
+}
+function refreshPhotoStatus(){
+  var ps=$('photoStatus');if(!ps)return;
+  var th=$('pageThumbs');
+  if(th)th.innerHTML=photoPages.map(function(p,i){return '<div class="thumb"><img src="'+p.dataUrl+'"><span>'+(i+1)+'</span><b onclick="delPage('+i+')">✕</b></div>';}).join('');
+  if(photoPages.length){ps.textContent=photoPages.length+' page(s) scanned. Scan another page, or tap Done to upload.';$('doneBtn').style.display='block';}
+  else{ps.textContent='';$('doneBtn').style.display='none';}
+}
+function delPage(i){photoPages.splice(i,1);refreshPhotoStatus();}
+function addPage(){
+  var input=$('photoInput'),f=input.files[0];if(!f)return;
+  $('photoStatus').textContent='Finding bill edges...';
+  loadImageFile(f,1800).then(function(c){input.value='';openScanEditor(c);})
+    .catch(function(err){$('photoStatus').textContent='⚠️ '+err.message+' Try again.';});
+}
+function loadImageFile(file,maxDim){
+  return new Promise(function(resolve,reject){
+    var url=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){
+      var w=img.naturalWidth,h=img.naturalHeight;
+      if(w>maxDim||h>maxDim){if(w>h){h=Math.round(h*maxDim/w);w=maxDim;}else{w=Math.round(w*maxDim/h);h=maxDim;}}
+      var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);resolve(c);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('Could not read that photo.'));};
+    img.src=url;
+  });
+}
+// ---- auto edge detection: largest bright region (paper) -> 4 corners ----
+function detectCorners(src){
+  var W=src.width,H=src.height,s=Math.min(1,240/Math.max(W,H)),w=Math.max(2,Math.round(W*s)),h=Math.max(2,Math.round(H*s));
+  var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');x.drawImage(src,0,0,w,h);
+  var d=x.getImageData(0,0,w,h).data,n=w*h,g=new Uint8Array(n),hist=new Array(256).fill(0),i;
+  for(i=0;i<n;i++){var v=(d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114)|0;g[i]=v;hist[v]++;}
+  var sum=0,sumB=0,wB=0,best=0,t=128;for(i=0;i<256;i++)sum+=i*hist[i];
+  for(i=0;i<256;i++){wB+=hist[i];if(!wB)continue;var wF=n-wB;if(!wF)break;sumB+=i*hist[i];var mB=sumB/wB,mF=(sum-sumB)/wF,b=wB*wF*(mB-mF)*(mB-mF);if(b>best){best=b;t=i;}}
+  var lab=new Int32Array(n),bestLab=0,bestSize=0,cur=0,stack=new Int32Array(n);
+  for(i=0;i<n;i++){
+    if(g[i]<=t||lab[i])continue;cur++;var sp=0,size=0;stack[sp++]=i;lab[i]=cur;
+    while(sp){var p=stack[--sp];size++;var px=p%w,py=(p/w)|0;
+      if(px>0&&!lab[p-1]&&g[p-1]>t){lab[p-1]=cur;stack[sp++]=p-1;}
+      if(px<w-1&&!lab[p+1]&&g[p+1]>t){lab[p+1]=cur;stack[sp++]=p+1;}
+      if(py>0&&!lab[p-w]&&g[p-w]>t){lab[p-w]=cur;stack[sp++]=p-w;}
+      if(py<h-1&&!lab[p+w]&&g[p+w]>t){lab[p+w]=cur;stack[sp++]=p+w;}}
+    if(size>bestSize){bestSize=size;bestLab=cur;}
+  }
+  var inset=function(){var m=0.04;return [[W*m,H*m],[W*(1-m),H*m],[W*(1-m),H*(1-m)],[W*m,H*(1-m)]];};
+  if(bestSize<n*0.12||bestSize>n*0.985)return inset();
+  var tl=null,tr=null,br=null,bl=null,a=1e9,b2=-1e9,c2=-1e9,d2=1e9;
+  for(i=0;i<n;i++){if(lab[i]!==bestLab)continue;var X=i%w,Y=(i/w)|0;
+    if(X+Y<a){a=X+Y;tl=[X,Y];} if(X+Y>b2){b2=X+Y;br=[X,Y];}
+    if(X-Y>c2){c2=X-Y;tr=[X,Y];} if(X-Y<d2){d2=X-Y;bl=[X,Y];}}
+  var k=1/s;return [tl,tr,br,bl].map(function(p){return [Math.min(W,Math.max(0,(p[0]+0.5)*k)),Math.min(H,Math.max(0,(p[1]+0.5)*k))];});
+}
+// ---- editor with draggable corners ----
+function openScanEditor(srcCanvas){
+  SCAN={src:srcCanvas,pts:detectCorners(srcCanvas),mode:'magic',drag:-1,rot:0};
+  $('form').innerHTML='<div class="photoBox"><p style="margin:0 0 6px">✨ Bill edges found automatically. If the green box is not on the bill corners, drag the dots.</p>'
+    +'<div class="scanWrap"><canvas id="scanCv"></canvas></div>'
+    +'<div class="seg"><button id="rotBtn" onclick="scanRotate()">⟳ Rotate</button><button class="grey" onclick="scanReset()">🔄 Auto-detect again</button></div>'
+    +'<button onclick="scanAccept()">✅ Use this scan</button>'
+    +'<button class="grey" onclick="scanFull()">Use full photo (no crop)</button>'
+    +'<button class="grey" onclick="photoHome()">↩ Retake</button><div id="photoStatus"></div></div>';
+  var cv=$('scanCv'),wrap=cv.parentNode,W=srcCanvas.width,H=srcCanvas.height;
+  var maxW=wrap.clientWidth||320,maxH=Math.round(window.innerHeight*0.55),sc=Math.min(maxW/W,maxH/H);
+  SCAN.view=sc;cv.width=Math.round(W*sc);cv.height=Math.round(H*sc);
+  function pos(e){var r=cv.getBoundingClientRect();return [(e.clientX-r.left)/sc,(e.clientY-r.top)/sc];}
+  cv.addEventListener('pointerdown',function(e){var p=pos(e),bi=-1,bd=1e9;
+    SCAN.pts.forEach(function(q,i){var dd=Math.hypot(q[0]-p[0],q[1]-p[1]);if(dd<bd){bd=dd;bi=i;}});
+    if(bd*sc<60){SCAN.drag=bi;cv.setPointerCapture(e.pointerId);e.preventDefault();}});
+  cv.addEventListener('pointermove',function(e){if(SCAN.drag<0)return;var p=pos(e);
+    SCAN.pts[SCAN.drag]=[Math.min(W,Math.max(0,p[0])),Math.min(H,Math.max(0,p[1]))];drawScan();e.preventDefault();});
+  var up=function(){SCAN.drag=-1;drawScan();};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  drawScan();
+  $('photoStatus').textContent='';
+}
+function scanRotate(){SCAN.rot=(SCAN.rot+1)%4;$('rotBtn').textContent='⟳ Rotate'+(SCAN.rot?' ('+SCAN.rot*90+'°)':'');}
+function scanReset(){SCAN.pts=detectCorners(SCAN.src);drawScan();}
+function rotateCanvas(c,r){if(!r)return c;var o=document.createElement('canvas'),sw=r%2;o.width=sw?c.height:c.width;o.height=sw?c.width:c.height;
+  var x=o.getContext('2d');x.translate(o.width/2,o.height/2);x.rotate(r*Math.PI/2);x.drawImage(c,-c.width/2,-c.height/2);return o;}
+function drawScan(){
+  var cv=$('scanCv');if(!cv)return;var x=cv.getContext('2d'),sc=SCAN.view,P=SCAN.pts;
+  x.drawImage(SCAN.src,0,0,cv.width,cv.height);
+  x.fillStyle='rgba(0,0,0,0.45)';x.beginPath();x.rect(0,0,cv.width,cv.height);
+  x.moveTo(P[0][0]*sc,P[0][1]*sc);for(var i=3;i>=1;i--)x.lineTo(P[i][0]*sc,P[i][1]*sc);x.closePath();x.fill('evenodd');
+  x.strokeStyle='#22c55e';x.lineWidth=2.5;x.beginPath();P.forEach(function(p,i){if(i)x.lineTo(p[0]*sc,p[1]*sc);else x.moveTo(p[0]*sc,p[1]*sc);});x.closePath();x.stroke();
+  P.forEach(function(p,i){x.beginPath();x.arc(p[0]*sc,p[1]*sc,SCAN.drag===i?16:12,0,7);x.fillStyle='rgba(34,197,94,0.35)';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke();});
+}
+// ---- perspective correction ----
+function solveH(from,to){ // homography mapping from[i] -> to[i]
+  var A=[],i,j,k;
+  for(i=0;i<4;i++){var X=from[i][0],Y=from[i][1],u=to[i][0],v=to[i][1];
+    A.push([X,Y,1,0,0,0,-u*X,-u*Y,u]);A.push([0,0,0,X,Y,1,-v*X,-v*Y,v]);}
+  for(i=0;i<8;i++){var mx=i;for(j=i+1;j<8;j++)if(Math.abs(A[j][i])>Math.abs(A[mx][i]))mx=j;
+    var tmp=A[i];A[i]=A[mx];A[mx]=tmp;if(Math.abs(A[i][i])<1e-12)return null;
+    for(j=0;j<8;j++){if(j===i)continue;var f=A[j][i]/A[i][i];for(k=i;k<9;k++)A[j][k]-=f*A[i][k];}}
+  var h=[];for(i=0;i<8;i++)h.push(A[i][8]/A[i][i]);h.push(1);return h;
+}
+function warpQuad(src,P){
+  var dist=function(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);};
+  var ow=Math.max(dist(P[0],P[1]),dist(P[3],P[2])),oh=Math.max(dist(P[0],P[3]),dist(P[1],P[2]));
+  var lim=1600/Math.max(ow,oh);if(lim<1){ow*=lim;oh*=lim;}ow=Math.max(50,Math.round(ow));oh=Math.max(50,Math.round(oh));
+  var H=solveH([[0,0],[ow,0],[ow,oh],[0,oh]],P);if(!H)throw new Error('Corners are not right - drag them to the bill corners.');
+  var sw=src.width,sh=src.height,sd=src.getContext('2d').getImageData(0,0,sw,sh).data;
+  var out=document.createElement('canvas');out.width=ow;out.height=oh;var ox=out.getContext('2d'),id=ox.createImageData(ow,oh),od=id.data;
+  for(var y=0;y<oh;y++){for(var x=0;x<ow;x++){
+    var X=x+0.5,Y=y+0.5,z=H[6]*X+H[7]*Y+1,u=(H[0]*X+H[1]*Y+H[2])/z-0.5,v=(H[3]*X+H[4]*Y+H[5])/z-0.5;
+    if(u<0)u=0;if(v<0)v=0;if(u>sw-1.001)u=sw-1.001;if(v>sh-1.001)v=sh-1.001;
+    var x0=u|0,y0=v|0,fx=u-x0,fy=v-y0,i00=(y0*sw+x0)*4,i10=i00+4,i01=i00+sw*4,i11=i01+4,o=(y*ow+x)*4;
+    for(var ch=0;ch<3;ch++){od[o+ch]=(sd[i00+ch]*(1-fx)+sd[i10+ch]*fx)*(1-fy)+(sd[i01+ch]*(1-fx)+sd[i11+ch]*fx)*fy;}
+    od[o+3]=255;}}
+  ox.putImageData(id,0,0);return out;
+}
+// ---- clean up like a scanner: remove shadows, white paper, dark text ----
+function enhanceScan(cv,mode){
+  var w=cv.width,h=cv.height,x=cv.getContext('2d'),im=x.getImageData(0,0,w,h),d=im.data,n=w*h,i;
+  var L=new Float32Array(n);for(i=0;i<n;i++)L[i]=d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114;
+  // background (paper brightness) = blur of a max-filtered small copy
+  var s=Math.max(1,Math.round(Math.max(w,h)/80)),bw=Math.ceil(w/s),bh=Math.ceil(h/s),B=new Float32Array(bw*bh),bx,by;
+  for(i=0;i<n;i++){var px=i%w,py=(i/w)|0,k=((py/s)|0)*bw+((px/s)|0);if(L[i]>B[k])B[k]=L[i];}
+  for(var pass=0;pass<3;pass++){var B2=new Float32Array(bw*bh);
+    for(by=0;by<bh;by++)for(bx=0;bx<bw;bx++){var t=0,c=0;for(var dy=-2;dy<=2;dy++)for(var dx=-2;dx<=2;dx++){var yy=by+dy,xx=bx+dx;if(yy<0||xx<0||yy>=bh||xx>=bw)continue;t+=B[yy*bw+xx];c++;}B2[by*bw+bx]=t/c;}
+    B=B2;}
+  for(i=0;i<n;i++){
+    var X=(i%w)/s-0.5,Y=((i/w)|0)/s-0.5;if(X<0)X=0;if(Y<0)Y=0;var x0=Math.min(bw-1,X|0),y0=Math.min(bh-1,Y|0),x1=Math.min(bw-1,x0+1),y1=Math.min(bh-1,y0+1),fx=Math.min(1,X-x0),fy=Math.min(1,Y-y0);
+    var bg=(B[y0*bw+x0]*(1-fx)+B[y0*bw+x1]*fx)*(1-fy)+(B[y1*bw+x0]*(1-fx)+B[y1*bw+x1]*fx)*fy;if(bg<40)bg=40;
+    var r=L[i]/bg; // 1 = paper, lower = ink
+    var o=i*4;
+    // Magic Color: lift paper to white, keep ink colours, boost contrast + colour
+    var gain=255/bg,o2=[0,0,0],ch;
+    for(ch=0;ch<3;ch++){o2[ch]=d[o+ch]*gain;}
+    var m=(o2[0]+o2[1]+o2[2])/3;
+    for(ch=0;ch<3;ch++){var cvv=m+(o2[ch]-m)*1.35;cvv=255-(255-cvv)*1.3;d[o+ch]=cvv;}
+    if(r>=0.93){var wt=Math.min(1,(r-0.93)/0.05);for(ch=0;ch<3;ch++)d[o+ch]=d[o+ch]*(1-wt)+255*wt;}
+  }
+  x.putImageData(im,0,0);return cv;
+}
+function scanAccept(){
+  var ps=$('photoStatus');ps.textContent='Scanning...';
+  setTimeout(function(){
+    try{var out=warpQuad(SCAN.src,SCAN.pts);finishScan(out);}
+    catch(err){ps.textContent='⚠️ '+err.message;}
+  },30);
+}
+function scanFull(){
+  var ps=$('photoStatus');ps.textContent='Scanning...';
+  setTimeout(function(){
+    var s=SCAN.src,c=document.createElement('canvas'),k=Math.min(1,1600/Math.max(s.width,s.height));
+    c.width=Math.round(s.width*k);c.height=Math.round(s.height*k);c.getContext('2d').drawImage(s,0,0,c.width,c.height);finishScan(c);
+  },30);
+}
+function finishScan(out){
+  var tw=Math.round(out.width*0.006),th=Math.round(out.height*0.006); // trim edge line
+  if(tw||th){var t=document.createElement('canvas');t.width=out.width-2*tw;t.height=out.height-2*th;t.getContext('2d').drawImage(out,-tw,-th);out=t;}
+  enhanceScan(out,SCAN.mode);out=rotateCanvas(out,SCAN.rot);
+  var dataUrl=out.toDataURL('image/jpeg',0.72);
+  photoPages.push({data:dataUrl.split(',')[1],dataUrl:dataUrl,width:out.width,height:out.height});
+  SCAN=null;photoHome();
+}
+function uploadAllPages(){
+  if(!photoPages.length)return;
+  var ps=$('photoStatus');ps.textContent='Building PDF...';$('doneBtn').disabled=true;
+  try{
+    var jsPDF=window.jspdf.jsPDF,doc=null;
+    photoPages.forEach(function(p,idx){ // A4 width (595 pt), height by page shape
+      var pw=595,ph=Math.round(595*p.height/p.width);
+      if(idx===0)doc=new jsPDF({unit:'pt',format:[pw,ph],orientation:pw>ph?'l':'p'}); else doc.addPage([pw,ph],pw>ph?'l':'p');
+      doc.addImage(p.dataUrl,'JPEG',0,0,pw,ph);
+    });
+    var pdfBase64=doc.output('datauristring').split(',')[1];
+    ps.textContent='Saving scan...';
+    qPut({id:newId(),kind:'scan',seq:Date.now()+Math.random(),entryId:currentEntryId,token:U.token,email:U.email,bill:currentBillNo,b64:pdfBase64,pages:photoPages.length,status:'pending',createdAt:Date.now()}).then(function(){
+      kickSync();build();$('msg').style.color='green';
+      $('msg').textContent='✅ Saved with bill scan. '+(navigator.onLine?'Uploading now.':'It will upload when the network is back.');
+    },function(e){$('doneBtn').disabled=false;ps.textContent='⚠️ Could not save the scan on this phone: '+(e&&e.message||e);});
+  }catch(err){$('doneBtn').disabled=false;ps.textContent='⚠️ Could not build PDF: '+err.message+'. Try again.';}
+}
+function skipPhoto(){build();$('msg').style.color='green';$('msg').textContent='Saved without photo. Please give the bill copy to the office.';}
+
+// ---------- Today's entries (view only) ----------
+var CHECKCOL={'OK':'#14532d','FAR FROM STORE':'#b00020','WEAK GPS':'#8a5a00','NO GPS':'#b00020'};
+function dayKey(t){var d=new Date(t);return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()}
+function hhmm(t){var d=new Date(t);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+function todayView(){
+  $('form').innerHTML='<div class="empty">Loading today\'s entries...</div>';
+  qAll().then(function(items){
+    var today=dayKey(Date.now()),scans={};
+    items.forEach(function(it){if(it.kind==='scan')scans[it.entryId]=it});
+    var mine=items.filter(function(it){return it.kind==='entry'&&it.email===U.email&&dayKey(it.clientTime)===today});
+    liveCall('myToday',[PIN],15000).then(function(r){if(TAB==='today')renderToday(r.entries,mine,scans,'')},
+      function(e){if(TAB==='today')renderToday(null,mine,scans,e.net?'📴 No network - showing entries saved on this phone.':'Could not load from the sheet: '+e.message)});
+  });
+}
+function localRow(it,scans){
+  var d=it.d||{},role=d.activeRole,sc=scans[it.id];
+  var extra=role==='orders'?(d.type||'')+(d.mode?' · '+d.mode:''):role==='accounts'?(d.transporter||'')+(d.cases?' · '+d.cases+' cases':''):(d.returnStatus==='same'?'Same bill':d.returnStatus==='old'?'Old bill return':'');
+  var st=it.status==='rejected'?'<span class="tag" style="background:#fde8e8;color:#9b1c1c">⚠️ Not saved: '+esc(it.error)+'</span>'
+    :it.status==='done'?'<span class="tag" style="background:#e3f4e8;color:#14532d">☁️ uploaded</span>'
+    :'<span class="tag" style="background:#fff6e0;color:#8a5a00">⏳ waiting to upload'+(it.needLogin?' - log in again':'')+'</span>';
+  var ph=role==='delivery'&&d.bill?(sc?(sc.status==='done'?(sc.result&&sc.result.skipped?'<span style="font-size:11px;color:#14532d">📷 '+esc('Uploaded by '+sc.result.photoBy)+'</span>':'<span style="font-size:11px;color:#14532d">📷 scan ✓</span>'):sc.status==='rejected'?'<span style="font-size:11px;color:#9b1c1c">📷 scan not uploaded</span>':'<span style="font-size:11px;color:#8a5a00">📷 scan waiting</span>'):'<span style="font-size:11px;color:#8a5a00">📷 no scan</span>'):'';
+  return {role:role,time:hhmm(it.clientTime),ts:it.clientTime,store:d.party,bill:d.bill,amount:d.amount,extra:extra,html:st+ph};
+}
+function renderToday(server,mine,scans,note){
+  var rows=[],seen={};
+  if(server){server.forEach(function(e){seen[e.id]=1;
+    var c=e.check?'<span style="font-size:11px;font-weight:700;color:'+(CHECKCOL[e.check]||'#5f6b76')+'">📍 '+esc(e.check)+'</span>':'';
+    var sc=e.id&&scans[e.id];
+    var ph=e.role==='delivery'&&e.bill?(e.photo==='Uploaded'?'<span style="font-size:11px;color:#14532d">📷 photo ✓</span>':/^Uploaded by /.test(e.photo)?'<span style="font-size:11px;color:#14532d">📷 '+esc(e.photo)+'</span>':sc&&sc.status==='pending'?'<span style="font-size:11px;color:#8a5a00">📷 scan waiting</span>':'<span style="font-size:11px;color:#8a5a00">📷 no photo</span>'):'';
+    var md=/^Offline/.test(e.mode||'')?'<span style="font-size:11px;color:#5f6b76">📴 '+esc(e.mode)+'</span>':'';
+    rows.push({role:e.role,time:e.time,ts:e.ts,store:e.store,bill:e.bill,amount:e.amount,extra:e.extra,html:c+ph+md});});}
+  mine.forEach(function(it){if(seen[it.id])return;if(server&&it.status==='done'&&!(it.result&&it.result.rowNum))return;rows.push(localRow(it,scans));});
+  rows.sort(function(a,b){return b.ts-a.ts});
+  var tot=0;rows.forEach(function(e){if(!/Not saved/.test(e.html))tot+=Number(e.amount)||0});
+  var h='<div style="font-size:12px;color:#7b8699;margin-bottom:6px">'+new Date().toLocaleDateString('en-GB').replace(/\//g,'-')+' · view only</div>'
+    +(note?'<div class="warn" style="margin:0 0 10px">'+esc(note)+'</div>':'')
+    +'<div class="kpis"><div class="kpi"><b>'+rows.length+'</b><span>Entries today</span></div><div class="kpi"><b>'+inr(tot)+'</b><span>Total value</span></div></div>';
+  if(!rows.length) h+='<div class="empty">No entries yet today.</div>';
+  h+=rows.map(function(e){
+    return '<div class="row" style="cursor:default;align-items:flex-start"><div style="font-weight:700;font-size:13px;color:#5f6b76;min-width:42px">'+esc(e.time)+'</div>'
+      +'<div class="nm"><div>'+esc(e.store)+'</div><small>'+(ICON[e.role]||'')+' '+esc(e.bill||'')+(e.extra?' · '+esc(e.extra):'')+'</small><div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:3px;white-space:normal;overflow:visible">'+e.html+'</div></div>'
+      +'<div class="amt">'+(Number(e.amount)?inr(Number(e.amount)):'')+'</div></div>';
+  }).join('');
+  h+='<div class="empty" style="padding:14px 8px">Entries cannot be changed here. If something is wrong, tell the office.</div>';
+  $('form').innerHTML=h;
+}
+
+// ---------- Outstanding ----------
+var BANDS=[[30,'#d9ead3','#1b1f24','0-30 / not due'],[60,'#fff2cc','#1b1f24','31-60'],[90,'#f9cb9c','#1b1f24','61-90'],[150,'#f4cccc','#990000','91-150'],[1e9,'#cc0000','#ffffff','150+']];
+function band(d){for(var i=0;i<BANDS.length;i++)if(d<=BANDS[i][0])return BANDS[i];return BANDS[4]}
+function inr(x){if(Math.abs(x)<10&&Math.round(x)!==x)return (x<0?'-':'')+'₹'+Math.abs(x).toFixed(2);var neg=x<0;x=Math.round(Math.abs(x));var s=String(x),l=s.slice(-3),o=s.slice(0,-3);if(o)l=','+l;o=o.replace(/\B(?=(\d{2})+(?!\d))/g,',');return (neg?'-':'')+'₹'+o+l}
+function legend(){return '<div class="legend">'+BANDS.map(function(b){return '<span style="background:'+b[1]+';color:'+b[2]+'">'+b[3]+' days</span>'}).join('')+'</div>'}
+var OS=null,osQ='',osSort='az',osTimer=null,osSeq=0;
+function osStart(){
+  if(U.os==='search'){osSearch();return;}
+  if(OS){osHome();return;}
+  $('form').innerHTML='<div class="empty">Loading outstanding...</div>';
+  google.script.run.withSuccessHandler(function(d){OS=d;osHome();}).withFailureHandler(osFail).osAll(PIN);
+}
+function osFail(e){$('form').innerHTML='<div class="empty">'+(e.net?'📴 Outstanding needs internet. Try again when you have signal.':'Could not load outstanding: '+esc(e.message))+'</div>'}
+function osSearch(){
+  $('form').innerHTML='<label>Party name</label><input id="osq" type="search" autocomplete="off" placeholder="Type at least 3 letters" value="'+esc(osQ)+'"><div id="osl"></div>';
+  $('osq').oninput=function(e){osQ=e.target.value;clearTimeout(osTimer);osTimer=setTimeout(osLookup,350)};
+  osLookup();
+}
+function osLookup(){
+  var el=$('osl');if(!el)return;var t=osQ.trim();
+  if(t.length<3){el.innerHTML='<div class="empty">Type at least 3 letters of the party name to see its pending bills.</div>';return;}
+  el.innerHTML='<div class="empty">Searching...</div>';var my=++osSeq;
+  google.script.run.withSuccessHandler(function(r){
+    if(my!==osSeq||!$('osl'))return;
+    if(!r.names.length){$('osl').innerHTML='<div class="empty">No pending bills found for that name.</div>';return;}
+    $('osl').innerHTML=r.names.map(function(n,i){return '<div class="row" data-i="'+i+'"><div class="nm"><div>'+esc(n)+'</div></div><span style="color:#7b8699;font-size:20px">›</span></div>'}).join('')+(r.more?'<div class="empty">More parties match. Type more of the name.</div>':'');
+    Array.prototype.forEach.call($('osl').querySelectorAll('.row'),function(x){x.onclick=function(){osOpen(r.names[+x.getAttribute('data-i')])}});
+  }).withFailureHandler(osFail).osFind(PIN,t);
+}
+function osOpen(n){
+  $('form').innerHTML='<div class="empty">Loading...</div>';
+  google.script.run.withSuccessHandler(function(r){
+    if(r.error){$('form').innerHTML='<div class="empty">'+esc(r.error)+'</div>';return;}
+    osBills(r.party,osSearch);
+  }).withFailureHandler(osFail).osParty(PIN,n);
+}
+function osHome(){
+  var t=0,o=0;OS.parties.forEach(function(p){t+=p.t;o+=p.o90});
+  $('form').innerHTML='<div style="font-size:12px;color:#7b8699;margin-bottom:6px">'+esc(OS.when)+' · '+OS.parties.length+' parties</div>'
+    +'<div class="kpis"><div class="kpi"><b>'+inr(t)+'</b><span>Total outstanding</span></div><div class="kpi"><b>'+inr(o)+'</b><span>Over 90 days</span></div></div>'
+    +'<input id="osq" type="search" placeholder="Search party" value="'+esc(osQ)+'"><div class="sort"><button data-s="az">A-Z</button><button data-s="amt">Highest due</button><button data-s="old">Oldest</button></div>'
+    +legend()+'<div id="osl"></div>';
+  $('osq').oninput=function(e){osQ=e.target.value;osList()};
+  Array.prototype.forEach.call(document.querySelectorAll('.sort button'),function(b){b.onclick=function(){osSort=b.getAttribute('data-s');osList()}});
+  osList();
+}
+function osList(){
+  Array.prototype.forEach.call(document.querySelectorAll('.sort button'),function(b){b.className=b.getAttribute('data-s')===osSort?'on':''});
+  var k=osQ.trim().toLowerCase(),ps=OS.parties.filter(function(p){return !k||p.n.toLowerCase().indexOf(k)>=0});
+  ps.sort(osSort==='amt'?function(a,b){return b.t-a.t}:osSort==='old'?function(a,b){return b.old-a.old}:function(a,b){return a.n<b.n?-1:1});
+  var el=$('osl');if(!ps.length){el.innerHTML='<div class="empty">No party found</div>';return;}
+  el.innerHTML=ps.map(function(p,i){var bd=band(p.old);return '<div class="row" data-i="'+i+'"><span class="chip" style="background:'+bd[1]+';color:'+bd[2]+'">'+(p.old>0?p.old+'d':'new')+'</span><div class="nm"><div>'+esc(p.n)+'</div><small>'+p.b.length+' bill'+(p.b.length>1?'s':'')+'</small></div><div class="amt">'+inr(p.t)+(p.o90>=1?'<small>'+inr(p.o90)+' over 90d</small>':'')+'</div></div>'}).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('.row'),function(r){r.onclick=function(){osBills(ps[+r.getAttribute('data-i')],osHome)}});
+}
+function osBills(p,back){
+  $('form').innerHTML='<button class="back" id="osbk">‹ Back</button><div style="font-weight:700;font-size:17px;margin:2px 0 8px">'+esc(p.n)+'</div>'
+    +'<div class="kpis"><div class="kpi"><b>'+inr(p.t)+'</b><span>Total pending</span></div><div class="kpi"><b>'+inr(p.o90)+'</b><span>Over 90 days</span></div></div>'+legend()
+    +p.b.map(function(b){var bd=band(b[4]);return '<div class="bill" style="background:'+bd[1]+';color:'+bd[2]+'"><div class="no">'+esc(b[0])+'</div><div class="pd">'+inr(b[3])+'</div><div class="meta">'+esc(b[1])+' · Bill '+inr(b[2])+(b[5]?' · '+esc(b[5]):'')+'</div><div class="dd">'+(b[4]<0?'Not due':b[4]+' days')+'</div></div>'}).join('');
+  $('osbk').onclick=back;window.scrollTo(0,0);
+}
+
+// lock after 10 minutes in the background
+var hiddenAt=0;
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){hiddenAt=Date.now();}
+  else{ if(U&&hiddenAt&&Date.now()-hiddenAt>10*60000){logout();} kickSync(); }
+});
+
+$('instBtn').onclick=function(){if(installEvt){installEvt.prompt();installEvt.userChoice.then(function(){installEvt=null;$('instBtn').style.display='none'})}};
+start('');kickSync();
+</script></body></html>

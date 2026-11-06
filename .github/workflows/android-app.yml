@@ -1,0 +1,61 @@
+name: Build Android app (APK)
+
+on:
+  push:
+    branches: [main]
+    paths: ['android/**', '.github/workflows/android-app.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      # Signing key: from repo secrets KS_B64 / KS_PASS if they exist, otherwise a new key for this build.
+      - name: Signing key
+        env:
+          KS_B64: ${{ secrets.KS_B64 }}
+          KS_PASS_SECRET: ${{ secrets.KS_PASS }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/ssl.jks"
+            echo "KS_PASS=$KS_PASS_SECRET" >> "$GITHUB_ENV"
+          else
+            PASS=$(openssl rand -hex 16)
+            keytool -genkeypair -keystore "$RUNNER_TEMP/ssl.jks" -storepass "$PASS" -keypass "$PASS" \
+              -alias sslstaff -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Sri Sudarshan Links, O=SSL, C=IN"
+            echo "::add-mask::$PASS"
+            echo "KS_PASS=$PASS" >> "$GITHUB_ENV"
+          fi
+          echo "KS_PATH=$RUNNER_TEMP/ssl.jks" >> "$GITHUB_ENV"
+          echo "BUILD_NO=${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Build APK
+        working-directory: android
+        run: gradle --no-daemon assembleRelease
+
+      - name: Rename
+        run: cp android/app/build/outputs/apk/release/app-release.apk SSL-Staff.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-build-${{ github.run_number }}
+          name: SSL Staff Android app (build ${{ github.run_number }})
+          body: Install SSL-Staff.apk on Android phones. Open it once, paste the setup link from the office, log in with your PIN.
+          files: SSL-Staff.apk
+          make_latest: true

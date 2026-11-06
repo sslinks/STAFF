@@ -1,0 +1,27 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'in.sslinks.staff'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'in.sslinks.staff'
+        minSdk 24
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv('BUILD_NO') ?: '1')
+        versionName "1." + (System.getenv('BUILD_NO') ?: '1')
+    }
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('KS_PATH') ?: 'missing.jks')
+            storePassword System.getenv('KS_PASS')
+            keyAlias 'sslstaff'
+            keyPassword System.getenv('KS_PASS')
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.release }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+
+dependencies { implementation 'androidx.core:core:1.13.1' }

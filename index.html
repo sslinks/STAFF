@@ -138,7 +138,7 @@ window.addEventListener('offline',function(){showSync(lastSync||{pending:0,offli
 var installEvt=null;
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();installEvt=e;$('instBtn').style.display='block'});
 window.addEventListener('appinstalled',function(){$('instBtn').style.display='none'});
-function isApp(){return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone}
+function isApp(){return /SSLStaffApp/.test(navigator.userAgent)||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone}
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){})}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
 
@@ -168,7 +168,14 @@ function pinScreen(note){
 function start(pin){
   if(!API){
     $('who2').textContent='SSL Staff';$('who').textContent='Setup needed';
-    $('form').innerHTML='<div class="empty">This app is not connected yet.<br><br>Open the <b>setup link</b> sent by the office (WhatsApp) on this phone, then install the app.</div>';return;
+    $('form').innerHTML='<div class="empty" style="padding:10px 4px">This app is not connected yet.<br><br>In WhatsApp, <b>long-press the setup link</b> sent by the office → <b>Copy</b>, then paste it here.</div>'
+      +'<label>Setup link</label><input id="setupLink" autocomplete="off" placeholder="Paste the setup link here"><button id="setupBtn">Connect</button>';
+    $('setupBtn').onclick=function(){
+      var m=String($('setupLink').value).match(/(?:k=)?(AKfyc[\w-]{20,})/);
+      if(!m){$('msg').style.color='#c00';$('msg').textContent='That is not the setup link. Copy the full link from the office message.';return;}
+      API='https://script.google.com/macros/s/'+m[1]+'/exec';try{localStorage.setItem('ssl_api',API)}catch(e){}
+      metaSet('api',API).catch(function(){});$('msg').textContent='';start('');};
+    return;
   }
   if(!pin){pinScreen('');return;}
   $('who').textContent='Checking PIN...';$('loginBtn')&&($('loginBtn').disabled=true);

@@ -84,7 +84,7 @@ button.grey{background:#8b93a3;box-shadow:none;margin-top:10px}
 <div class="syncbar" id="syncBar" onclick="if(U)showTab('today')"></div>
 <div class="card" id="app">
   <div class="banner" id="banner"><h2 id="who2">Daily Work</h2><small id="who">Signing in...</small></div>
-  <div class="tabs" id="tabs"><button id="tabWork" onclick="showTab('work')">📝 Work</button><button id="tabToday" onclick="showTab('today')">📅 Today</button><button id="tabOs" onclick="showTab('os')">💰 Outstanding</button></div>
+  <div class="tabs" id="tabs"><button id="tabWork" onclick="showTab('work')">📝 Work</button><button id="tabToday" onclick="showTab('today')">📅 Today</button><button id="tabOs" onclick="showTab('os')">💰 Outstanding</button><button id="tabEd" onclick="showTab('ed')" style="display:none">✏️ Entries</button></div>
   <div class="body"><div id="form"></div><div class="msg" id="msg"></div></div>
 </div>
 <div id="modal"><div class="card"><div class="banner" id="mbanner"><h2>Please confirm</h2></div><div class="body">
@@ -217,11 +217,13 @@ function setActiveRole(r){
   build();
   if(isField()&&U.capture) startGps(); else stopGps();
 }
-function markTabs(){$('tabWork').className=TAB==='work'?'on':'';$('tabToday').className=TAB==='today'?'on':'';$('tabOs').className=TAB==='os'?'on':''}
+function markTabs(){$('tabWork').className=TAB==='work'?'on':'';$('tabToday').className=TAB==='today'?'on':'';$('tabOs').className=TAB==='os'?'on':'';$('tabEd').className=TAB==='ed'?'on':'';
+  $('tabEd').style.display=U&&U.role==='accounts'?'block':'none';$('tabOs').textContent=U&&U.role==='accounts'?'💰 Dues':'💰 Outstanding'}
 function showTab(t){
   if(!U)return;TAB=t;markTabs();$('msg').textContent='';
   if(t==='work'){ if(U.role) build(); else showRolePicker(); }
   else if(t==='today') todayView();
+  else if(t==='ed') accList();
   else osStart();
 }
 
@@ -414,6 +416,7 @@ function review(){
     qPut(item).then(function(){
       closeM();kickSync();
       if(U.role=='delivery'&&d.bill&&!dupInfo.photoBy){ showPhotoScreen(item.id,d.bill,null,''); }
+      else if(U.role=='accounts'){ showPhotoScreen(item.id,d.bill,null,'','bill'); }
       else{
         build();
         var t='✅ Saved. '+(navigator.onLine?'Uploading now.':'No network - it will upload automatically.');
@@ -434,10 +437,11 @@ function closeM(){$('modal').style.display='none';$('yes').textContent='Yes, sub
 
 // ---------- bill scan (like CamScanner) ----------
 var photoPages=[],SCAN=null;
-var currentEntryId='';
-function showPhotoScreen(entryId,billNo,res,note){
-  currentEntryId=entryId;currentBillNo=billNo;photoPages=[];
-  var t='✅ Bill No. '+esc(billNo)+' saved'+(navigator.onLine?'.':' on this phone (no network).');
+var currentEntryId='',photoTarget='',photoAfter=null;
+var PHOTO_WHAT={'':'Scan the delivery bill','bill':'Scan the bill copy / LR (optional)','ack':'Scan the acknowledgement (signed copy / POD)'};
+function showPhotoScreen(entryId,billNo,res,note,target,after){
+  currentEntryId=entryId;currentBillNo=billNo;photoPages=[];photoTarget=target||'';photoAfter=after||null;
+  var t=photoAfter?'Bill No. '+esc(billNo)+':':'✅ Bill No. '+esc(billNo)+' saved'+(navigator.onLine?'.':' on this phone (no network).');
   if(res&&res.splitValue)t+=' Net/split amount: Rs '+res.splitValue+' each (x'+res.totalEntries+').';
   $('msg').innerHTML=note||'';
   photoHome(t);
@@ -445,12 +449,12 @@ function showPhotoScreen(entryId,billNo,res,note){
 var photoHeadText='';
 function photoHome(t){
   if(t)photoHeadText=t;
-  $('form').innerHTML='<div class="photoBox"><p>'+photoHeadText+'<br>Scan the delivery bill (Magic Color). Keep the bill flat on a darker surface and fill the screen with it. More than one page: tap Scan Page for each page, then Done.</p>'
+  $('form').innerHTML='<div class="photoBox"><p>'+photoHeadText+'<br>'+PHOTO_WHAT[photoTarget]+' (Magic Color). Keep the bill flat on a darker surface and fill the screen with it. More than one page: tap Scan Page for each page, then Done.</p>'
     +'<input type="file" accept="image/*" capture="environment" id="photoInput" style="display:none" onchange="addPage()">'
     +'<div id="pageThumbs" class="thumbs"></div>'
     +'<button onclick="$(\'photoInput\').click()">📷 Scan Page</button>'
     +'<button id="doneBtn" onclick="uploadAllPages()" style="display:none">✅ Done - Upload</button>'
-    +'<button class="grey" onclick="skipPhoto()">Skip for now</button><div id="photoStatus"></div></div>';
+    +'<button class="grey" onclick="skipPhoto()">'+(photoAfter?'Cancel':'Skip for now')+'</button><div id="photoStatus"></div></div>';
   refreshPhotoStatus();
 }
 function refreshPhotoStatus(){
@@ -623,13 +627,16 @@ function uploadAllPages(){
     });
     var pdfBase64=doc.output('datauristring').split(',')[1];
     ps.textContent='Saving scan...';
-    qPut({id:newId(),kind:'scan',seq:Date.now()+Math.random(),entryId:currentEntryId,token:U.token,email:U.email,bill:currentBillNo,b64:pdfBase64,pages:photoPages.length,status:'pending',createdAt:Date.now()}).then(function(){
-      kickSync();build();$('msg').style.color='green';
-      $('msg').textContent='✅ Saved with bill scan. '+(navigator.onLine?'Uploading now.':'It will upload when the network is back.');
+    qPut({id:newId(),kind:'scan',seq:Date.now()+Math.random(),entryId:currentEntryId,token:U.token,email:U.email,bill:currentBillNo,target:photoTarget,b64:pdfBase64,pages:photoPages.length,status:'pending',createdAt:Date.now()}).then(function(){
+      kickSync();
+      var t=(photoTarget==='ack'?'✅ Acknowledgement saved. ':'✅ Saved with bill scan. ')+(navigator.onLine?'Uploading now.':'It will upload when the network is back.');
+      if(photoAfter){var f=photoAfter;photoAfter=null;f(t);return;}
+      build();$('msg').style.color='green';$('msg').textContent=t;
     },function(e){$('doneBtn').disabled=false;ps.textContent='⚠️ Could not save the scan on this phone: '+(e&&e.message||e);});
   }catch(err){$('doneBtn').disabled=false;ps.textContent='⚠️ Could not build PDF: '+err.message+'. Try again.';}
 }
-function skipPhoto(){build();$('msg').style.color='green';$('msg').textContent='Saved without photo. Please give the bill copy to the office.';}
+function skipPhoto(){if(photoAfter){var f=photoAfter;photoAfter=null;f('');return;}
+  build();$('msg').style.color='green';$('msg').textContent=photoTarget==='bill'?'Saved without photo. You can add the bill copy or acknowledgement later in the Entries tab.':'Saved without photo. Please give the bill copy to the office.';}
 
 // ---------- Today's entries (view only) ----------
 var CHECKCOL={'OK':'#14532d','FAR FROM STORE':'#b00020','WEAK GPS':'#8a5a00','NO GPS':'#b00020'};
@@ -674,8 +681,80 @@ function renderToday(server,mine,scans,note){
       +'<div class="nm"><div>'+esc(e.store)+'</div><small>'+(ICON[e.role]||'')+' '+esc(e.bill||'')+(e.extra?' · '+esc(e.extra):'')+'</small><div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:3px;white-space:normal;overflow:visible">'+e.html+'</div></div>'
       +'<div class="amt">'+(Number(e.amount)?inr(Number(e.amount)):'')+'</div></div>';
   }).join('');
-  h+='<div class="empty" style="padding:14px 8px">Entries cannot be changed here. If something is wrong, tell the office.</div>';
+  h+='<div class="empty" style="padding:14px 8px">'+(U.role==='accounts'?'To change an entry or add the acknowledgement, use the ✏️ Entries tab.':'Entries cannot be changed here. If something is wrong, tell the office.')+'</div>';
   $('form').innerHTML=h;
+}
+
+// ---------- Accounts: my entries - change them, add bill copy / acknowledgement ----------
+var ACC={list:null,filter:'pend',q:''};
+function accList(note){
+  $('form').innerHTML='<div class="empty">Loading your entries...</div>';
+  if(note){$('msg').style.color='green';$('msg').textContent=note;}
+  liveCall('myAccounts',[U.token],30000).then(function(r){ACC.list=r.entries;ACC.days=r.days;if(TAB==='ed')accRender();},function(e){
+    if(TAB!=='ed')return;
+    $('form').innerHTML='<div class="empty">'+(e.net?'📴 Changing entries needs internet. Try again when you have signal.':'Could not load: '+esc(e.message))+'</div><button class="grey" onclick="accList()">Try again</button>';});
+}
+function accWaiting(){return qAll().then(function(a){var w={};a.forEach(function(it){if(it.kind==='scan'&&it.status==='pending'&&it.target)w[it.entryId+'|'+it.target]=1});return w})}
+function accRender(){
+  accWaiting().then(function(w){
+    var L=ACC.list||[],pend=L.filter(function(e){return !e.ack&&!w[e.id+'|ack']}).length;
+    $('form').innerHTML='<input id="accq" type="search" autocomplete="off" placeholder="Search bill no. or store" value="'+esc(ACC.q)+'">'
+      +'<div class="seg"><button id="accP" onclick="ACC.filter=\'pend\';accRows()">Ack pending ('+pend+')</button><button id="accA" onclick="ACC.filter=\'all\';accRows()">All ('+L.length+')</button></div>'
+      +'<div id="accl"></div><div class="empty" style="padding:12px 8px;font-size:12px">Your entries from the last '+(ACC.days||90)+' days. Tap one to change it or add a photo.</div>';
+    $('accq').oninput=function(){ACC.q=this.value;accRows()};
+    ACC.w=w;accRows();
+  });
+}
+function accRows(){
+  var q=ACC.q.trim().toLowerCase(),w=ACC.w||{};
+  $('accP').className=ACC.filter==='pend'?'on':'';$('accA').className=ACC.filter==='all'?'on':'';
+  var L=(ACC.list||[]).filter(function(e){
+    if(ACC.filter==='pend'&&(e.ack||w[e.id+'|ack']))return false;
+    return !q||(e.bill+' '+e.store).toLowerCase().indexOf(q)>=0;});
+  $('accl').innerHTML=L.length?L.map(function(e){
+    var b=e.billPhoto?'<span style="color:#14532d">📄 bill ✓</span>':w[e.id+'|bill']?'<span style="color:#8a5a00">📄 bill waiting</span>':'<span style="color:#7b8699">📄 no bill copy</span>';
+    var a=e.ack?'<span style="color:#14532d">✅ ack ✓</span>':w[e.id+'|ack']?'<span style="color:#8a5a00">⏳ ack waiting to upload</span>':'<span style="color:#b00020">✋ ack pending</span>';
+    return '<div class="row" onclick="accEdit(\''+esc(e.id)+'\')" style="align-items:flex-start"><div class="nm"><div>'+esc(e.store)+'</div><small>'+esc(e.date)+' · 📊 '+esc(e.bill)+' · '+esc(e.transporter)+(e.cases?' · '+esc(e.cases)+' cases':'')+'</small>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:3px;font-size:11px;font-weight:700;white-space:normal">'+b+a+(e.edited?'<span style="color:#5f6b76;font-weight:400">✏️ '+esc(e.edited.slice(0,16))+'</span>':'')+'</div></div>'
+      +'<div class="amt">'+inr(Number(e.amount)||0)+'</div></div>';}).join(''):'<div class="empty">'+(ACC.filter==='pend'?'No entries waiting for acknowledgement. 👍':'No entries found.')+'</div>';
+}
+function accFind(id){return (ACC.list||[]).filter(function(e){return e.id===id})[0]}
+function accEdit(id){
+  var e=accFind(id);if(!e)return accList();
+  $('msg').textContent='';SEL={};
+  var w=ACC.w||{};
+  $('form').innerHTML='<button class="back" onclick="accRender()">‹ Back to my entries</button>'
+    +'<div style="font-size:12px;color:#7b8699">Entered '+esc(e.date)+(e.edited?' · last change '+esc(e.edited.slice(0,16)):'')+'</div>'
+    +'<div class="seg" style="margin-top:10px"><button id="ackBtn" class="on" onclick="accPhoto(\''+esc(id)+'\',\'ack\')">'+(e.ack?'🔁 Replace ack':'📷 Add acknowledgement')+'</button>'
+    +'<button onclick="accPhoto(\''+esc(id)+'\',\'bill\')">'+(e.billPhoto?'🔁 Replace bill copy':'📄 Add bill copy')+'</button></div>'
+    +'<div style="font-size:12px;margin:4px 0 6px">'+(e.ack?'✅ Acknowledgement uploaded':w[id+'|ack']?'⏳ Acknowledgement waiting to upload':'✋ Acknowledgement not added yet')+' · '+(e.billPhoto?'📄 Bill copy uploaded':w[id+'|bill']?'📄 Bill copy waiting':'📄 No bill copy')+'</div>'
+    +'<label>Store / Retailer</label>'+storePicker('party')
+    +'<label>Bill No.</label><input id="bill" autocomplete="off" value="'+esc(e.bill)+'">'
+    +'<label>Bill amount (Rs)</label><input id="amount" type="number" inputmode="decimal" value="'+esc(e.amount)+'">'
+    +'<label>Transporter</label>'+dlist('transporter',U.lists.transporters)
+    +'<label>No. of cases</label><input id="cases" type="number" inputmode="numeric" value="'+esc(e.cases)+'">'
+    +'<label>Transporter cost (Rs)</label><input id="transportCost" type="number" inputmode="decimal" value="'+esc(e.cost)+'">'
+    +'<button id="accSave" onclick="accSave(\''+esc(id)+'\')">💾 Save changes</button>';
+  bindPicker('party');pick('party',e.store);$('transporter').value=e.transporter;
+}
+function accSave(id){
+  var d={party:SEL.party||'',bill:val('bill'),amount:val('amount'),transporter:val('transporter'),cases:val('cases'),transportCost:val('transportCost')},m=[];
+  if(!d.party)m.push('Pick the store from the list');
+  if(!d.bill||!(+d.amount>0))m.push('Fill bill no. and amount');
+  if(!d.transporter)m.push('Select transporter');
+  if(m.length){$('msg').style.color='#c00';$('msg').textContent=m.join(' | ');return;}
+  var b=$('accSave');b.disabled=true;b.textContent='Saving...';
+  liveCall('editAcc',[U.token,id,d],30000).then(function(r){
+    ACC.list=ACC.list.map(function(e){return e.id===id?r.entry:e});
+    accRender();$('msg').style.color='green';$('msg').textContent='✅ '+r.msg;
+  },function(e){b.disabled=false;b.textContent='💾 Save changes';$('msg').style.color='#c00';
+    $('msg').textContent=e.net?'📴 No network - changes not saved. Try again when you have signal.':e.message;});
+}
+function accPhoto(id,target){
+  var e=accFind(id);if(!e)return;
+  showPhotoScreen(id,e.bill,null,'',target,function(t){
+    accWaiting().then(function(w){ACC.w=w;accRender();if(t){$('msg').style.color='green';$('msg').textContent=t;}});
+  });
 }
 
 // ---------- Outstanding ----------

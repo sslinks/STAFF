@@ -78,7 +78,7 @@ function sslDoSync() {
         }
         var call = it.kind === 'entry'
           ? apiCall(url, 'submitQ', [it.token, { id: it.id, d: it.d, clientTime: it.clientTime }, Date.now()], 45000)
-          : apiCall(url, 'scanQ', [it.token, it.entryId, it.b64, it.bill], 120000);
+          : apiCall(url, 'scanQ', [it.token, it.entryId, it.b64, it.bill, it.target || ''], 120000);
         return call.then(function (res) {
           // Uploaded: remove it from the phone. For entries only a small marker stays until midnight
           // (bill no. for the same-bill check) - store, amount, GPS and scan are deleted.

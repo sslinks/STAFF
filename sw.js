@@ -1,6 +1,6 @@
 /* SSL Staff - background worker: opens the app without network and uploads saved entries. */
 importScripts('sync.js');
-var CACHE = 'ssl-staff-v1';
+var CACHE = 'ssl-staff-v2';
 var SHELL = ['./', 'index.html', 'sync.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];
 self.addEventListener('install', function (e) {

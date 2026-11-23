@@ -150,7 +150,7 @@ var ICON={delivery:'🚚',orders:'🧾',accounts:'📊'};
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function opts(a){return '<option value="">-- select --</option>'+a.map(function(x){return '<option>'+esc(x)+'</option>'}).join('')}
 function dlist(id,a){return '<input id="'+id+'" list="'+id+'_l" autocomplete="off" placeholder="Type to search..."><datalist id="'+id+'_l">'+a.map(function(x){return '<option value="'+esc(x)+'">'}).join('')+'</datalist>'}
-function cap(r){return r.charAt(0).toUpperCase()+r.slice(1)}
+function cap(r){if(r==='accounts'&&U&&U.office)return 'Office In-charge';return r.charAt(0).toUpperCase()+r.slice(1)}
 function isField(){return U && U.fieldRoles.indexOf(U.role)>=0}
 
 // ---------- login ----------
@@ -218,7 +218,7 @@ function setActiveRole(r){
   if(isField()&&U.capture) startGps(); else stopGps();
 }
 function markTabs(){$('tabWork').className=TAB==='work'?'on':'';$('tabToday').className=TAB==='today'?'on':'';$('tabOs').className=TAB==='os'?'on':'';$('tabEd').className=TAB==='ed'?'on':'';
-  $('tabEd').style.display=U&&U.role==='accounts'?'block':'none';$('tabOs').textContent=U&&U.role==='accounts'?'💰 Dues':'💰 Outstanding'}
+  $('tabEd').style.display=U&&U.role==='accounts'&&U.office?'block':'none';$('tabOs').textContent=U&&U.role==='accounts'?'💰 Dues':'💰 Outstanding'}
 function showTab(t){
   if(!U)return;TAB=t;markTabs();$('msg').textContent='';
   if(t==='work'){ if(U.role) build(); else showRolePicker(); }
@@ -416,7 +416,7 @@ function review(){
     qPut(item).then(function(){
       closeM();kickSync();
       if(U.role=='delivery'&&d.bill&&!dupInfo.photoBy){ showPhotoScreen(item.id,d.bill,null,''); }
-      else if(U.role=='accounts'){ showPhotoScreen(item.id,d.bill,null,'','bill'); }
+      else if(U.role=='accounts'&&U.office){ showPhotoScreen(item.id,d.bill,null,'','bill'); }
       else{
         build();
         var t='✅ Saved. '+(navigator.onLine?'Uploading now.':'No network - it will upload automatically.');
@@ -681,7 +681,7 @@ function renderToday(server,mine,scans,note){
       +'<div class="nm"><div>'+esc(e.store)+'</div><small>'+(ICON[e.role]||'')+' '+esc(e.bill||'')+(e.extra?' · '+esc(e.extra):'')+'</small><div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:3px;white-space:normal;overflow:visible">'+e.html+'</div></div>'
       +'<div class="amt">'+(Number(e.amount)?inr(Number(e.amount)):'')+'</div></div>';
   }).join('');
-  h+='<div class="empty" style="padding:14px 8px">'+(U.role==='accounts'?'To change an entry or add the acknowledgement, use the ✏️ Entries tab.':'Entries cannot be changed here. If something is wrong, tell the office.')+'</div>';
+  h+='<div class="empty" style="padding:14px 8px">'+(U.role==='accounts'&&U.office?'To change an entry or add the acknowledgement, use the ✏️ Entries tab.':'Entries cannot be changed here. If something is wrong, tell the office.')+'</div>';
   $('form').innerHTML=h;
 }
 

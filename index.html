@@ -438,7 +438,7 @@ function closeM(){$('modal').style.display='none';$('yes').textContent='Yes, sub
 // ---------- bill scan (like CamScanner) ----------
 var photoPages=[],SCAN=null;
 var currentEntryId='',photoTarget='',photoAfter=null;
-var PHOTO_WHAT={'':'Scan the delivery bill','bill':'Scan the bill copy / LR (optional)','ack':'Scan the acknowledgement (signed copy / POD)'};
+var PHOTO_WHAT={'':'Scan the delivery bill','bill':'Scan or upload the bill copy / LR (optional)','ack':'Scan or upload the acknowledgement (signed copy / POD)'};
 function showPhotoScreen(entryId,billNo,res,note,target,after){
   currentEntryId=entryId;currentBillNo=billNo;photoPages=[];photoTarget=target||'';photoAfter=after||null;
   var t=photoAfter?'Bill No. '+esc(billNo)+':':'✅ Bill No. '+esc(billNo)+' saved'+(navigator.onLine?'.':' on this phone (no network).');
@@ -453,6 +453,8 @@ function photoHome(t){
     +'<input type="file" accept="image/*" capture="environment" id="photoInput" style="display:none" onchange="addPage()">'
     +'<div id="pageThumbs" class="thumbs"></div>'
     +'<button onclick="$(\'photoInput\').click()">📷 Scan Page</button>'
+    +(photoTarget?'<input type="file" accept="application/pdf,image/*" multiple id="fileInput" style="display:none" onchange="pickFiles()">'
+      +'<button class="grey" onclick="$(\'fileInput\').click()">📁 Upload PDF / photo from phone</button>':'')
     +'<button id="doneBtn" onclick="uploadAllPages()" style="display:none">✅ Done - Upload</button>'
     +'<button class="grey" onclick="skipPhoto()">'+(photoAfter?'Cancel':'Skip for now')+'</button><div id="photoStatus"></div></div>';
   refreshPhotoStatus();
@@ -461,7 +463,7 @@ function refreshPhotoStatus(){
   var ps=$('photoStatus');if(!ps)return;
   var th=$('pageThumbs');
   if(th)th.innerHTML=photoPages.map(function(p,i){return '<div class="thumb"><img src="'+p.dataUrl+'"><span>'+(i+1)+'</span><b onclick="delPage('+i+')">✕</b></div>';}).join('');
-  if(photoPages.length){ps.textContent=photoPages.length+' page(s) scanned. Scan another page, or tap Done to upload.';$('doneBtn').style.display='block';}
+  if(photoPages.length){ps.textContent=photoPages.length+' page(s) ready. Add another page, or tap Done to upload.';$('doneBtn').style.display='block';}
   else{ps.textContent='';$('doneBtn').style.display='none';}
 }
 function delPage(i){photoPages.splice(i,1);refreshPhotoStatus();}
@@ -626,14 +628,37 @@ function uploadAllPages(){
       doc.addImage(p.dataUrl,'JPEG',0,0,pw,ph);
     });
     var pdfBase64=doc.output('datauristring').split(',')[1];
-    ps.textContent='Saving scan...';
-    qPut({id:newId(),kind:'scan',seq:Date.now()+Math.random(),entryId:currentEntryId,token:U.token,email:U.email,bill:currentBillNo,target:photoTarget,b64:pdfBase64,pages:photoPages.length,status:'pending',createdAt:Date.now()}).then(function(){
+    sendPdf(pdfBase64,photoPages.length);
+  }catch(err){$('doneBtn').disabled=false;ps.textContent='⚠️ Could not build PDF: '+err.message+'. Try again.';}
+}
+// A PDF or photo already on the phone (no hard copy to scan): PDF goes as it is; photos become pages of one PDF
+function pickFiles(){
+  var inp=$('fileInput'),fs=[].slice.call(inp.files||[]);inp.value='';if(!fs.length)return;
+  var ps=$('photoStatus'),isPdf=function(f){return /pdf/i.test(f.type)||/\.pdf$/i.test(f.name)};
+  var pdfs=fs.filter(isPdf);
+  if(pdfs.length){
+    if(fs.length>1||photoPages.length){ps.textContent='⚠️ Choose one PDF on its own (or only photos).';return;}
+    if(pdfs[0].size>15e6){ps.textContent='⚠️ This PDF is too big (max 15 MB).';return;}
+    ps.textContent='Reading PDF...';
+    var r=new FileReader();r.onload=function(){sendPdf(String(r.result).split(',')[1],1)};
+    r.onerror=function(){ps.textContent='⚠️ Could not read the file. Try again.'};r.readAsDataURL(pdfs[0]);return;
+  }
+  ps.textContent='Adding '+fs.length+' photo(s)...';
+  fs.reduce(function(pr,f){return pr.then(function(){return loadImageFile(f,1800).then(function(c){
+    var d=c.toDataURL('image/jpeg',0.8);photoPages.push({data:d.split(',')[1],dataUrl:d,width:c.width,height:c.height});})})},Promise.resolve())
+    .then(refreshPhotoStatus,function(e){refreshPhotoStatus();ps.textContent='⚠️ '+(e&&e.message||e)});
+}
+function sendPdf(pdfBase64,pages){
+  var ps=$('photoStatus');if($('doneBtn'))$('doneBtn').disabled=true;
+  try{
+    ps.textContent='Saving...';
+    qPut({id:newId(),kind:'scan',seq:Date.now()+Math.random(),entryId:currentEntryId,token:U.token,email:U.email,bill:currentBillNo,target:photoTarget,b64:pdfBase64,pages:pages,status:'pending',createdAt:Date.now()}).then(function(){
       kickSync();
-      var t=(photoTarget==='ack'?'✅ Acknowledgement saved. ':'✅ Saved with bill scan. ')+(navigator.onLine?'Uploading now.':'It will upload when the network is back.');
+      var t=(photoTarget==='ack'?'✅ Acknowledgement saved. ':photoTarget==='bill'?'✅ Bill copy saved. ':'✅ Saved with bill scan. ')+(navigator.onLine?'Uploading now.':'It will upload when the network is back.');
       if(photoAfter){var f=photoAfter;photoAfter=null;f(t);return;}
       build();$('msg').style.color='green';$('msg').textContent=t;
-    },function(e){$('doneBtn').disabled=false;ps.textContent='⚠️ Could not save the scan on this phone: '+(e&&e.message||e);});
-  }catch(err){$('doneBtn').disabled=false;ps.textContent='⚠️ Could not build PDF: '+err.message+'. Try again.';}
+    },function(e){if($('doneBtn'))$('doneBtn').disabled=false;ps.textContent='⚠️ Could not save on this phone: '+(e&&e.message||e);});
+  }catch(err){if($('doneBtn'))$('doneBtn').disabled=false;ps.textContent='⚠️ '+err.message;}
 }
 function skipPhoto(){if(photoAfter){var f=photoAfter;photoAfter=null;f('');return;}
   build();$('msg').style.color='green';$('msg').textContent=photoTarget==='bill'?'Saved without photo. You can add the bill copy or acknowledgement later in the Entries tab.':'Saved without photo. Please give the bill copy to the office.';}
